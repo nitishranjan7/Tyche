@@ -476,6 +476,7 @@
         <div class="seg-toggle" id="analyticsModeToggle">
           <button class="seg-btn active" data-mode="vendor" onclick="setAnalyticsMode('vendor')">By vendor</button>
           <button class="seg-btn" data-mode="month" onclick="setAnalyticsMode('month')">By month</button>
+          <button class="seg-btn" data-mode="team" onclick="setAnalyticsMode('team')">By team</button>
         </div>
         <select class="select-control" id="analyticsRange">
           <option>Last 12 months</option>
@@ -628,8 +629,7 @@ const teamName = id => (state.teams.find(t=>t.id===id) || {}).name || '—';
 const isAdmin = () => state.currentView === 'admin';
 const currentTeamId = () => isAdmin() ? null : state.currentView;
 
-function teamSpent(teamId){
-  const since = state.periodStart;
+function teamSpent(teamId, since = state.periodStart){
   const onOrAfter = iso => new Date(iso+'T00:00:00') >= since;
   const txSum = state.transactions.filter(t=>t.teamId===teamId && t.status==='approved' && onOrAfter(t.dateISO)).reduce((s,t)=>s+t.amount,0);
   const expSum = state.expenses.filter(e=>e.teamId===teamId && onOrAfter(e.dateISO)).reduce((s,e)=>s+e.amount,0);
@@ -1048,11 +1048,14 @@ function renderAnalytics(){
       let total=0; for(let i=0;i<12;i++) total += analyticsMonthlySpend(v,i);
       return { label:v.name, value:total };
     }).sort((a,b)=>b.value-a.value);
-  } else {
+  } else if(state.analyticsMode==='month'){
     bars = ANALYTICS_MONTHS.map((m,i)=>{
       let total=0; ANALYTICS_VENDORS.forEach(v=>total += analyticsMonthlySpend(v,i));
       return { label:m, value:total };
     });
+  } else {
+    bars = state.teams.map(t=>({ label:t.name, value:teamSpent(t.id, new Date(0)) }))
+      .sort((a,b)=>b.value-a.value);
   }
   const max = Math.max(...bars.map(b=>b.value), 1);
   document.getElementById('analyticsChart').innerHTML = bars.map(b=>`
