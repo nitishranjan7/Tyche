@@ -22,6 +22,11 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `cb3976f` — Add explicit single-currency positioning note — revert to `0a61544`
+  Small text under the Admin dashboard's total balance card stating Tyche is
+  single-currency by design, turning the lack of multi-entity FX support
+  into a stated product choice rather than a silent gap. Admin-only since
+  it lives inside the admin branch of `renderDashboard`.
 - `0ec33db` — Add CSV export to Ledger and Bills — revert to `2cf7ca5`
   Admin-only "Export CSV" button in the header row of each view. Builds the
   CSV client-side from the currently visible (filtered/searched) rows via a
