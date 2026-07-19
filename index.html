@@ -177,6 +177,12 @@
   }
   .team-name{font-family:'Fraunces',serif;font-weight:600;font-size:16.5px;margin-bottom:2px;}
   .team-members{font-size:11.5px;color:var(--text-dim);margin-bottom:14px;}
+  .reset-note{font-size:10.5px;color:var(--text-dim);margin:-6px 0 10px;}
+
+  .view-header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  .period-controls{text-align:right;}
+  .period-note{display:none;margin-top:8px;font-size:12px;color:var(--sage-text);}
+  .period-note.show{display:block;}
 
   /* dial */
   .dial-wrap{position:relative;width:130px;height:130px;margin:2px 0 12px;}
@@ -395,8 +401,16 @@
 
     <!-- TEAMS & BUDGETS -->
     <div class="view" id="view-teams">
-      <h1>Teams & Budgets</h1>
-      <p class="subhead">Each team draws only from its own capped budget — never the company pot. Transfers above <span class="mono" id="thresholdNote">$2,000</span> need your approval.</p>
+      <div class="view-header-row">
+        <div>
+          <h1>Teams & Budgets</h1>
+          <p class="subhead">Each team draws only from its own capped budget — never the company pot. Transfers above <span class="mono" id="thresholdNote">$2,000</span> need your approval.</p>
+        </div>
+        <div class="period-controls" id="periodControls">
+          <button class="btn small" onclick="startNewPeriod()">Start new period</button>
+          <div class="period-note" id="periodResetNote">✓ New period started</div>
+        </div>
+      </div>
       <div class="teams-grid" id="teamsGrid"></div>
     </div>
 
@@ -520,32 +534,35 @@
 </div>
 
 <script>
+const TODAY = new Date(2026,6,19);
+
 let state = {
   totalBalance: 184320,
   threshold: 2000,
+  periodStart: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1),
   teams: [
     { id:1, name:"Marketing", cap:12000, members:["A. Kade","R. Osei"] },
     { id:2, name:"Engineering", cap:25000, members:["S. Vance","T. Idowu","L. Park"] },
     { id:3, name:"Ops", cap:6000, members:["J. Marsh"] },
   ],
   transactions: [
-    { id:1, teamId:1, teamName:"Marketing", desc:"Meta Ads Ltd", amount:2200, status:"approved", date:"Jul 14" },
-    { id:2, teamId:2, teamName:"Engineering", desc:"AWS", amount:4100, status:"approved", date:"Jul 12" },
-    { id:3, teamId:3, teamName:"Ops", desc:"WeWork desk fees", amount:980, status:"approved", date:"Jul 10" },
-    { id:4, teamId:1, teamName:"Marketing", desc:"Figma seats", amount:150, status:"approved", date:"Jul 8" },
+    { id:1, teamId:1, teamName:"Marketing", desc:"Meta Ads Ltd", amount:2200, status:"approved", date:"Jul 14", dateISO:"2026-07-14" },
+    { id:2, teamId:2, teamName:"Engineering", desc:"AWS", amount:4100, status:"approved", date:"Jul 12", dateISO:"2026-07-12" },
+    { id:3, teamId:3, teamName:"Ops", desc:"WeWork desk fees", amount:980, status:"approved", date:"Jul 10", dateISO:"2026-07-10" },
+    { id:4, teamId:1, teamName:"Marketing", desc:"Figma seats", amount:150, status:"approved", date:"Jul 8", dateISO:"2026-07-08" },
   ],
   approvals: [
     { id:101, teamId:2, teamName:"Engineering", desc:"Datadog annual plan", amount:3600, status:"pending" },
   ],
   expenses: [
-    { id:1, date:"Jul 16", card:"Amex Platinum ••3348", merchant:"Delta Air Lines", amount:612, status:"Approved", teamId:2 },
-    { id:2, date:"Jul 15", card:"Visa Business ••1027", merchant:"Staples", amount:84, status:"Incomplete", teamId:3 },
-    { id:3, date:"Jul 15", card:"Amex Platinum ••3348", merchant:"Uber", amount:38, status:"Approved", teamId:2 },
-    { id:4, date:"Jul 14", card:"Visa Business ••1027", merchant:"Notion Labs", amount:120, status:"Pending", teamId:2 },
-    { id:5, date:"Jul 12", card:"Amex Platinum ••3348", merchant:"Hilton Hotels", amount:940, status:"Incomplete", teamId:1 },
-    { id:6, date:"Jul 11", card:"Visa Business ••1027", merchant:"Adobe", amount:59, status:"Approved", teamId:1 },
-    { id:7, date:"Jul 9", card:"Amex Platinum ••3348", merchant:"Starbucks", amount:14, status:"Approved", teamId:3 },
-    { id:8, date:"Jul 8", card:"Visa Business ••1027", merchant:"Google Ads", amount:530, status:"Pending", teamId:1 },
+    { id:1, date:"Jul 16", dateISO:"2026-07-16", card:"Amex Platinum ••3348", merchant:"Delta Air Lines", amount:612, status:"Approved", teamId:2 },
+    { id:2, date:"Jul 15", dateISO:"2026-07-15", card:"Visa Business ••1027", merchant:"Staples", amount:84, status:"Incomplete", teamId:3 },
+    { id:3, date:"Jul 15", dateISO:"2026-07-15", card:"Amex Platinum ••3348", merchant:"Uber", amount:38, status:"Approved", teamId:2 },
+    { id:4, date:"Jul 14", dateISO:"2026-07-14", card:"Visa Business ••1027", merchant:"Notion Labs", amount:120, status:"Pending", teamId:2 },
+    { id:5, date:"Jul 12", dateISO:"2026-07-12", card:"Amex Platinum ••3348", merchant:"Hilton Hotels", amount:940, status:"Incomplete", teamId:1 },
+    { id:6, date:"Jul 11", dateISO:"2026-07-11", card:"Visa Business ••1027", merchant:"Adobe", amount:59, status:"Approved", teamId:1 },
+    { id:7, date:"Jul 9", dateISO:"2026-07-09", card:"Amex Platinum ••3348", merchant:"Starbucks", amount:14, status:"Approved", teamId:3 },
+    { id:8, date:"Jul 8", dateISO:"2026-07-08", card:"Visa Business ••1027", merchant:"Google Ads", amount:530, status:"Pending", teamId:1 },
   ],
   bills: [
     { id:1, vendor:"Adobe", desc:"Creative Cloud annual", invoice:"INV-4471", amount:2400, dueDate:"2026-07-05", status:"For payment", method:"ACH", teamId:1 },
@@ -595,9 +612,11 @@ const isAdmin = () => state.currentView === 'admin';
 const currentTeamId = () => isAdmin() ? null : state.currentView;
 
 function teamSpent(teamId){
-  const txSum = state.transactions.filter(t=>t.teamId===teamId && t.status==='approved').reduce((s,t)=>s+t.amount,0);
-  const expSum = state.expenses.filter(e=>e.teamId===teamId).reduce((s,e)=>s+e.amount,0);
-  const billSum = state.bills.filter(b=>b.teamId===teamId && (b.status==='Sent for payment' || b.status==='Paid')).reduce((s,b)=>s+b.amount,0);
+  const since = state.periodStart;
+  const onOrAfter = iso => new Date(iso+'T00:00:00') >= since;
+  const txSum = state.transactions.filter(t=>t.teamId===teamId && t.status==='approved' && onOrAfter(t.dateISO)).reduce((s,t)=>s+t.amount,0);
+  const expSum = state.expenses.filter(e=>e.teamId===teamId && onOrAfter(e.dateISO)).reduce((s,e)=>s+e.amount,0);
+  const billSum = state.bills.filter(b=>b.teamId===teamId && (b.status==='Sent for payment' || b.status==='Paid') && onOrAfter(b.dueDate)).reduce((s,b)=>s+b.amount,0);
   const cardSum = state.cards.filter(c=>c.teamId===teamId).reduce((s,c)=>s+c.spend,0);
   return txSum + expSum + billSum + cardSum;
 }
@@ -638,6 +657,7 @@ function teamCardHTML(t){
           <div class="dial-of">left of ${fmt(t.cap)}</div>
         </div>
       </div>
+      <div class="reset-note">Resets monthly</div>
       <div class="team-btns">
         <button class="btn" onclick="openTransfer(${t.id})">Transfer</button>
         <button class="btn primary" onclick="adjustCap(${t.id})">Adjust cap</button>
@@ -661,6 +681,7 @@ function dashboardTeamCardHTML(t){
       <div>
         <div class="pot-label">${t.name} budget · team lead view</div>
         <div class="pot-figure mono" style="font-size:22px;">${fmt(spent)} spent</div>
+        <div class="reset-note" style="margin:4px 0 0;">Resets monthly</div>
       </div>
     </div>`;
 }
@@ -760,7 +781,7 @@ function submitTransfer(){
   if(amount > state.threshold){
     state.approvals.push({ id: state.nextApprovalId++, teamId, teamName: team.name, desc: recipient, amount, status:'pending' });
   } else {
-    state.transactions.unshift({ id: state.nextTxId++, teamId, teamName: team.name, desc: recipient, amount, status:'approved', date:'Today' });
+    state.transactions.unshift({ id: state.nextTxId++, teamId, teamName: team.name, desc: recipient, amount, status:'approved', date:'Today', dateISO: TODAY.toISOString().slice(0,10) });
   }
   closeModal('overlayTransfer');
   renderAll();
@@ -812,7 +833,7 @@ function decideApproval(id, approve){
   const a = state.approvals.find(x=>x.id===id);
   a.status = approve ? 'approved' : 'rejected';
   if(approve){
-    state.transactions.unshift({ id: state.nextTxId++, teamId:a.teamId, teamName:a.teamName, desc:a.desc, amount:a.amount, status:'approved', date:'Today' });
+    state.transactions.unshift({ id: state.nextTxId++, teamId:a.teamId, teamName:a.teamName, desc:a.desc, amount:a.amount, status:'approved', date:'Today', dateISO: TODAY.toISOString().slice(0,10) });
   }
   renderAll();
 }
@@ -867,7 +888,6 @@ function renderExpenses(){
 }
 
 const BILL_STATUSES = ['For submission','For approval','For payment','Sent for payment','Paid'];
-const TODAY = new Date(2026,6,19);
 const statusClass = s => s.toLowerCase().replace(/\s+/g,'-');
 
 function billBucket(b){
@@ -1026,11 +1046,21 @@ function saveSettings(){
   renderAll();
 }
 
+function startNewPeriod(){
+  state.periodStart = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+  renderAll();
+  const note = document.getElementById('periodResetNote');
+  note.classList.add('show');
+  clearTimeout(window._periodNoteTimer);
+  window._periodNoteTimer = setTimeout(()=>note.classList.remove('show'), 2500);
+}
+
 function applyRoleVisibility(){
   const admin = isAdmin();
   document.querySelector('.tab[data-tab="vendors"]').style.display = admin ? '' : 'none';
   document.querySelector('.tab[data-tab="analytics"]').style.display = admin ? '' : 'none';
   document.getElementById('settingsBtn').style.display = admin ? '' : 'none';
+  document.getElementById('periodControls').style.display = admin ? '' : 'none';
   if(!admin){
     const activeTab = document.querySelector('.tab.active')?.dataset.tab;
     if(activeTab==='vendors' || activeTab==='analytics') switchTab('dashboard');
