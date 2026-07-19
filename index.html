@@ -320,12 +320,21 @@
   .chart-bar-value{font-size:10px;color:var(--text-dim);margin-bottom:4px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
   .chart-bar-label{margin-top:8px;font-size:10.5px;color:var(--text-dim);text-align:center;line-height:1.3;}
 
-  .ledger-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .ledger-filters{display:flex;gap:8px;flex-wrap:wrap;}
   .chip{
     font-size:12px;padding:6px 13px;border-radius:20px;border:1px solid var(--line);
     color:var(--text-dim);cursor:pointer;background:transparent;
   }
   .chip.active{background:var(--brass);border-color:var(--brass);color:#1B1508;font-weight:600;}
+
+  .list-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .search-input{
+    font-family:'Inter',sans-serif;font-size:12.5px;padding:7px 14px;border-radius:20px;
+    border:1px solid var(--line);background:transparent;color:var(--text-light);
+    outline:none;min-width:200px;
+  }
+  .search-input::placeholder{color:var(--text-dim);}
+  .search-input:focus{border-color:var(--brass);}
 
   /* ---- Modal ---- */
   .overlay{
@@ -439,7 +448,10 @@
     <div class="view" id="view-ledger">
       <h1>Ledger</h1>
       <p class="subhead">Every transfer, filterable by team.</p>
-      <div class="ledger-filters" id="ledgerFilters"></div>
+      <div class="list-toolbar">
+        <div class="ledger-filters" id="ledgerFilters"></div>
+        <input class="search-input" id="ledgerSearch" placeholder="Search recipient or description…" oninput="setSearch('ledger', this.value)">
+      </div>
       <div class="row-list" id="ledgerList"></div>
     </div>
 
@@ -451,6 +463,9 @@
         <div class="figure mono" id="expSubmissionRate">0%</div>
         <div class="label">of expenses submitted with receipts</div>
       </div>
+      <div class="list-toolbar" style="justify-content:flex-end;">
+        <input class="search-input" id="expensesSearch" placeholder="Search merchant…" oninput="setSearch('expenses', this.value)">
+      </div>
       <div class="row-list" id="expensesList"></div>
     </div>
 
@@ -461,7 +476,10 @@
 
       <div class="grid-3" id="billsSummary"></div>
 
-      <div class="ledger-filters" id="billFilters"></div>
+      <div class="list-toolbar">
+        <div class="ledger-filters" id="billFilters"></div>
+        <input class="search-input" id="billsSearch" placeholder="Search vendor, description, or invoice…" oninput="setSearch('bills', this.value)">
+      </div>
       <div class="row-list" id="billsList"></div>
     </div>
 
@@ -469,6 +487,9 @@
     <div class="view" id="view-vendors">
       <h1>Vendors</h1>
       <p class="subhead">Every vendor on file, with their payout details on record.</p>
+      <div class="list-toolbar" style="justify-content:flex-end;">
+        <input class="search-input" id="vendorsSearch" placeholder="Search name or owner…" oninput="setSearch('vendors', this.value)">
+      </div>
       <div class="row-list" id="vendorsList"></div>
     </div>
 
@@ -643,6 +664,7 @@ let state = {
   ],
   analyticsMode: "vendor",
   ledgerFilter: "all",
+  search: { ledger:"", expenses:"", bills:"", vendors:"" },
   nextTeamId: 4,
   nextTxId: 5,
   nextApprovalId: 102,
@@ -913,11 +935,13 @@ function renderLedger(){
   }
 
   const list = document.getElementById('ledgerList');
-  const rows = isAdmin()
+  let rows = isAdmin()
     ? state.transactions.filter(t=> state.ledgerFilter==='all' || t.teamName===state.ledgerFilter)
     : state.transactions.filter(t=> t.teamId===currentTeamId());
+  const q = state.search.ledger.trim().toLowerCase();
+  if(q) rows = rows.filter(t=> t.desc.toLowerCase().includes(q));
   if(rows.length===0){
-    list.innerHTML = `<div class="empty-state">No transactions for this filter.</div>`;
+    list.innerHTML = `<div class="empty-state">${q ? 'No transactions match your search.' : 'No transactions for this filter.'}</div>`;
     return;
   }
   list.innerHTML = rows.map(t=>`
@@ -932,13 +956,22 @@ function renderLedger(){
 
 function setLedgerFilter(name){ state.ledgerFilter = name; renderLedger(); }
 
+const RENDER_BY_SEARCH_KEY = { ledger:()=>renderLedger(), expenses:()=>renderExpenses(), bills:()=>renderBills(), vendors:()=>renderVendors() };
+function setSearch(key, value){ state.search[key] = value; RENDER_BY_SEARCH_KEY[key](); }
+
 function renderExpenses(){
-  const data = isAdmin() ? state.expenses : state.expenses.filter(e=>e.teamId===currentTeamId());
+  let data = isAdmin() ? state.expenses : state.expenses.filter(e=>e.teamId===currentTeamId());
+  const q = state.search.expenses.trim().toLowerCase();
+  if(q) data = data.filter(e=> e.merchant.toLowerCase().includes(q));
   const total = data.length;
   const submitted = data.filter(e=>e.status!=='Incomplete').length;
   document.getElementById('expSubmissionRate').textContent = total ? Math.round((submitted/total)*100)+'%' : '0%';
 
   const list = document.getElementById('expensesList');
+  if(data.length===0){
+    list.innerHTML = `<div class="empty-state">${q ? 'No expenses match your search.' : 'No expenses yet.'}</div>`;
+    return;
+  }
   list.innerHTML = data.map(e=>`
     <div class="row">
       <div class="exp-date">${e.date}</div>
@@ -990,9 +1023,11 @@ function renderBills(){
   ).join('');
 
   const list = document.getElementById('billsList');
-  const rows = scoped.filter(b=> state.billFilter==='All' || b.status===state.billFilter);
+  let rows = scoped.filter(b=> state.billFilter==='All' || b.status===state.billFilter);
+  const q = state.search.bills.trim().toLowerCase();
+  if(q) rows = rows.filter(b=> b.vendor.toLowerCase().includes(q) || b.desc.toLowerCase().includes(q) || b.invoice.toLowerCase().includes(q));
   if(rows.length===0){
-    list.innerHTML = `<div class="empty-state">No bills for this filter.</div>`;
+    list.innerHTML = `<div class="empty-state">${q ? 'No bills match your search.' : 'No bills for this filter.'}</div>`;
     return;
   }
   list.innerHTML = rows.map(b=>`
@@ -1023,7 +1058,13 @@ function advanceBillStatus(id){
 
 function renderVendors(){
   const list = document.getElementById('vendorsList');
-  list.innerHTML = state.vendors.map(v=>{
+  const q = state.search.vendors.trim().toLowerCase();
+  const data = q ? state.vendors.filter(v=> v.name.toLowerCase().includes(q) || v.owner.toLowerCase().includes(q)) : state.vendors;
+  if(data.length===0){
+    list.innerHTML = `<div class="empty-state">No vendors match your search.</div>`;
+    return;
+  }
+  list.innerHTML = data.map(v=>{
     const linked = state.bills.filter(b=>b.vendorId===v.id);
     const totalSpent = linked.reduce((s,b)=>s+b.amount,0);
     const paid = linked.filter(b=>b.status==='Paid');
