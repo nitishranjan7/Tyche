@@ -22,6 +22,10 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `0f97523` — Add role-based view selector with real data restrictions — revert to `f6a6418`
+  Top-right "View as" dropdown (Admin + dynamic per-team entries) that filters
+  Dashboard/Teams & Budgets/Approvals/Ledger/Expenses/Bills/Cards to the
+  selected team and hides Vendors/Analytics from the sidebar for team leads.
 - `82db120` — Fix brand wordmark spacing and remove split color styling — revert to `127dd04`
   "Ty" and `<span>che</span>` were separate flex items under `.brand`'s
   `display:flex; gap:8px`, so the 8px gap rendered as a visible split in the
