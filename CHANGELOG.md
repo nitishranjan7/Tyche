@@ -22,6 +22,17 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `693d988` — Fix dense list layouts for mobile — revert to `a24d015`
+  Also added the missing `<meta name="viewport">` tag — without it mobile
+  browsers render at a virtual ~980px viewport and the existing 760px
+  breakpoint never actually fires on a real phone. Expenses/Bills/Cards/
+  Vendors rows now wrap their fields into `.row-primary` (identity +
+  headline figure) and `.row-secondary` (everything else) containers; both
+  are `display:contents` by default so desktop is pixel-identical to
+  before, and become real stacked flex rows at the breakpoint. `order` is
+  set on each field, scoped per view, to preserve the original left-to-
+  right column order in both modes. Ledger/Approvals rows were left as-is
+  (out of scope, already just 4 columns).
 - `cb3976f` — Add explicit single-currency positioning note — revert to `0a61544`
   Small text under the Admin dashboard's total balance card stating Tyche is
   single-currency by design, turning the lack of multi-entity FX support
