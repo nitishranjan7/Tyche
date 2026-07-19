@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vaultline — Teams & Budgets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14181D;
+    --ink-2:#1B212A;
+    --ink-3:#232A34;
+    --paper:#EDE7DA;
+    --paper-dim:#3A414C;
+    --brass:#C99A3F;
+    --brass-bright:#E0B65E;
+    --sage:#7DA08A;
+    --rust:#C1604A;
+    --text-dim:#8B93A0;
+    --text-light:#F3F0E8;
+    --line:#2C333D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--text-light);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .app{
+    display:flex;
+    min-height:100vh;
+  }
+
+  /* ---- Binder rail (sidebar) ---- */
+  .rail{
+    width:216px;
+    flex-shrink:0;
+    background:var(--ink-2);
+    border-right:1px solid var(--line);
+    padding:28px 0 24px;
+    display:flex;
+    flex-direction:column;
+  }
+  .brand{
+    padding:0 20px 24px;
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    font-weight:600;
+    letter-spacing:.01em;
+    color:var(--text-light);
+    border-bottom:1px solid var(--line);
+    margin-bottom:8px;
+  }
+  .brand span{color:var(--brass-bright);}
+  .tab{
+    position:relative;
+    padding:13px 20px 13px 22px;
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--text-dim);
+    cursor:pointer;
+    border-left:3px solid transparent;
+    transition:background .15s ease,color .15s ease;
+    user-select:none;
+  }
+  .tab:hover{color:var(--text-light);background:rgba(255,255,255,.03);}
+  .tab.active{
+    color:var(--text-light);
+    background:var(--ink-3);
+    border-left:3px solid var(--brass);
+  }
+  .tab .badge{
+    float:right;
+    background:var(--rust);
+    color:#fff;
+    font-size:10px;
+    font-weight:600;
+    padding:1px 6px;
+    border-radius:20px;
+    line-height:1.5;
+  }
+  .rail-footer{
+    margin-top:auto;
+    padding:16px 20px 0;
+    border-top:1px solid var(--line);
+    font-size:11.5px;
+    color:var(--text-dim);
+    line-height:1.5;
+  }
+
+  /* ---- Main ---- */
+  .main{
+    flex:1;
+    padding:36px 44px 60px;
+    max-width:1040px;
+  }
+  .view{display:none;}
+  .view.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:26px;
+    margin:0 0 4px;
+    letter-spacing:.005em;
+  }
+  .subhead{
+    color:var(--text-dim);
+    font-size:13.5px;
+    margin:0 0 28px;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* ---- Dashboard ---- */
+  .pot-card{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:26px 28px;
+    margin-bottom:22px;
+  }
+  .pot-top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;}
+  .pot-label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;}
+  .pot-figure{font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;color:var(--text-light);}
+  .pot-visible-note{font-size:11.5px;color:var(--brass-bright);}
+
+  .split-bar{
+    margin-top:20px;
+    height:10px;
+    border-radius:6px;
+    background:var(--paper-dim);
+    overflow:hidden;
+    display:flex;
+  }
+  .split-bar .seg{height:100%;}
+  .split-legend{display:flex;gap:22px;margin-top:12px;font-size:12px;color:var(--text-dim);}
+  .split-legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:8px;}
+  .stat-card{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:18px 20px;}
+  .stat-card .k{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .stat-card .v{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;}
+
+  /* ---- Teams & Budgets ---- */
+  .teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .team-card{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+  }
+  .team-name{font-family:'Fraunces',serif;font-weight:600;font-size:16.5px;margin-bottom:2px;}
+  .team-members{font-size:11.5px;color:var(--text-dim);margin-bottom:14px;}
+
+  /* dial */
+  .dial-wrap{position:relative;width:130px;height:130px;margin:2px 0 12px;}
+  .dial-wrap svg{width:100%;height:100%;}
+  .dial-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .dial-remaining{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;}
+  .dial-of{font-size:10px;color:var(--text-dim);margin-top:2px;}
+
+  .team-btns{display:flex;gap:8px;width:100%;margin-top:4px;}
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:8px 12px;
+    border-radius:7px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text-light);
+    cursor:pointer;
+    flex:1;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .btn:hover{background:var(--ink-3);border-color:var(--brass);}
+  .btn.primary{background:var(--brass);border-color:var(--brass);color:#1B1508;}
+  .btn.primary:hover{background:var(--brass-bright);}
+  .btn.small{padding:6px 10px;font-size:11.5px;flex:none;}
+  .btn.danger:hover{border-color:var(--rust);}
+
+  .add-team-card{
+    border:1.5px dashed var(--line);
+    border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-dim);
+    font-size:13px;
+    cursor:pointer;
+    min-height:236px;
+    transition:border-color .15s ease,color .15s ease;
+  }
+  .add-team-card:hover{border-color:var(--brass);color:var(--brass-bright);}
+
+  /* ---- Approvals & Ledger ---- */
+  .row-list{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .row{
+    display:flex;align-items:center;gap:14px;
+    padding:15px 20px;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .row:last-child{border-bottom:none;}
+  .row .r-team{width:110px;font-weight:600;flex-shrink:0;}
+  .row .r-desc{flex:1;color:var(--text-dim);}
+  .row .r-amt{font-family:'IBM Plex Mono',monospace;font-weight:600;width:100px;text-align:right;flex-shrink:0;}
+  .row .r-status{width:150px;flex-shrink:0;text-align:right;}
+  .pill{
+    display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+  }
+  .pill.pending{background:rgba(201,154,63,.18);color:var(--brass-bright);}
+  .pill.approved{background:rgba(125,160,138,.18);color:var(--sage);}
+  .pill.rejected{background:rgba(193,96,74,.18);color:var(--rust);}
+  .empty-state{padding:40px 20px;text-align:center;color:var(--text-dim);font-size:13px;}
+
+  .ledger-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .chip{
+    font-size:12px;padding:6px 13px;border-radius:20px;border:1px solid var(--line);
+    color:var(--text-dim);cursor:pointer;background:transparent;
+  }
+  .chip.active{background:var(--brass);border-color:var(--brass);color:#1B1508;font-weight:600;}
+
+  /* ---- Modal ---- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(10,12,15,.6);
+    display:none;align-items:center;justify-content:center;z-index:50;
+  }
+  .overlay.active{display:flex;}
+  .modal{
+    background:var(--ink-2);border:1px solid var(--line);border-radius:12px;
+    width:380px;max-width:90vw;padding:26px;
+  }
+  .modal h3{font-family:'Fraunces',serif;font-size:19px;margin:0 0 4px;font-weight:600;}
+  .modal .modal-sub{font-size:12.5px;color:var(--text-dim);margin-bottom:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
+  .field input,.field select{
+    width:100%;padding:9px 11px;border-radius:7px;border:1px solid var(--line);
+    background:var(--ink);color:var(--text-light);font-size:13.5px;font-family:'Inter',sans-serif;
+  }
+  .field input:focus,.field select:focus{outline:none;border-color:var(--brass);}
+  .modal-note{font-size:11.5px;color:var(--brass-bright);background:rgba(201,154,63,.1);padding:8px 10px;border-radius:7px;margin-bottom:14px;display:none;}
+  .modal-btns{display:flex;gap:10px;margin-top:20px;}
+
+  @media (max-width:760px){
+    .app{flex-direction:column;}
+    .rail{width:100%;flex-direction:row;overflow-x:auto;padding:12px;}
+    .brand,.rail-footer{display:none;}
+    .tab{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+    .tab.active{border-left:none;border-bottom:3px solid var(--brass);}
+    .main{padding:24px 18px 40px;}
+    .grid-3{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="rail">
+    <div class="brand">Vault<span>line</span></div>
+    <div class="tab active" data-tab="dashboard">Dashboard</div>
+    <div class="tab" data-tab="teams">Teams & Budgets</div>
+    <div class="tab" data-tab="approvals">Approvals <span class="badge" id="approvalBadge"></span></div>
+    <div class="tab" data-tab="ledger">Ledger</div>
+    <div class="rail-footer">Fernweh Labs Ltd<br>Demo workspace · mock data</div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <h1>Dashboard</h1>
+      <p class="subhead">Only you can see the full company balance. Team leads only see their own budget.</p>
+
+      <div class="pot-card">
+        <div class="pot-top">
+          <div>
+            <div class="pot-label">Total balance · owner view</div>
+            <div class="pot-figure mono" id="totalBalanceFig">$0</div>
+          </div>
+          <div class="pot-visible-note">🔒 Visible to root owner only</div>
+        </div>
+        <div class="split-bar" id="splitBar"></div>
+        <div class="split-legend">
+          <span><span class="dot" style="background:var(--brass)"></span>Allocated to teams</span>
+          <span><span class="dot" style="background:var(--paper-dim)"></span>Unallocated reserve</span>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="stat-card"><div class="k">Teams</div><div class="v" id="statTeams">0</div></div>
+        <div class="stat-card"><div class="k">Pending approvals</div><div class="v" id="statPending">0</div></div>
+        <div class="stat-card"><div class="k">Spent this month</div><div class="v mono" id="statSpent">$0</div></div>
+      </div>
+    </div>
+
+    <!-- TEAMS & BUDGETS -->
+    <div class="view" id="view-teams">
+      <h1>Teams & Budgets</h1>
+      <p class="subhead">Each team draws only from its own capped budget — never the company pot. Transfers above <span class="mono" id="thresholdNote">$2,000</span> need your approval.</p>
+      <div class="teams-grid" id="teamsGrid"></div>
+    </div>
+
+    <!-- APPROVALS -->
+    <div class="view" id="view-approvals">
+      <h1>Approvals</h1>
+      <p class="subhead">Transfers a team requested above their auto-approve threshold.</p>
+      <div class="row-list" id="approvalsList"></div>
+    </div>
+
+    <!-- LEDGER -->
+    <div class="view" id="view-ledger">
+      <h1>Ledger</h1>
+      <p class="subhead">Every transfer, filterable by team.</p>
+      <div class="ledger-filters" id="ledgerFilters"></div>
+      <div class="row-list" id="ledgerList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: new team -->
+<div class="overlay" id="overlayNewTeam">
+  <div class="modal">
+    <h3>Create a team</h3>
+    <p class="modal-sub">Set a capped budget. Members will only ever see this amount — never the company total.</p>
+    <div class="field"><label>Team name</label><input id="newTeamName" placeholder="e.g. Design"></div>
+    <div class="field"><label>Budget cap</label><input id="newTeamCap" type="number" placeholder="5000"></div>
+    <div class="field"><label>Members (comma separated)</label><input id="newTeamMembers" placeholder="e.g. R. Osei, J. Marsh"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayNewTeam')">Cancel</button>
+      <button class="btn primary" onclick="createTeam()">Create team</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: transfer -->
+<div class="overlay" id="overlayTransfer">
+  <div class="modal">
+    <h3>Send a transfer</h3>
+    <p class="modal-sub" id="transferSub"></p>
+    <div class="field"><label>Recipient</label><input id="transferRecipient" placeholder="e.g. Meta Ads Ltd"></div>
+    <div class="field"><label>Amount</label><input id="transferAmount" type="number" placeholder="0.00"></div>
+    <div class="modal-note" id="transferNote">This exceeds the auto-approve threshold — it'll be sent to the owner for approval instead of going out immediately.</div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayTransfer')">Cancel</button>
+      <button class="btn primary" onclick="submitTransfer()">Send transfer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = {
+  totalBalance: 184320,
+  threshold: 2000,
+  teams: [
+    { id:1, name:"Marketing", cap:12000, spent:7350, members:["A. Kade","R. Osei"] },
+    { id:2, name:"Engineering", cap:25000, spent:24100, members:["S. Vance","T. Idowu","L. Park"] },
+    { id:3, name:"Ops", cap:6000, spent:1180, members:["J. Marsh"] },
+  ],
+  transactions: [
+    { id:1, teamId:1, teamName:"Marketing", desc:"Meta Ads Ltd", amount:2200, status:"approved", date:"Jul 14" },
+    { id:2, teamId:2, teamName:"Engineering", desc:"AWS", amount:4100, status:"approved", date:"Jul 12" },
+    { id:3, teamId:3, teamName:"Ops", desc:"WeWork desk fees", amount:980, status:"approved", date:"Jul 10" },
+    { id:4, teamId:1, teamName:"Marketing", desc:"Figma seats", amount:150, status:"approved", date:"Jul 8" },
+  ],
+  approvals: [
+    { id:101, teamId:2, teamName:"Engineering", desc:"Datadog annual plan", amount:3600, status:"pending" },
+  ],
+  ledgerFilter: "all",
+  nextTeamId: 4,
+  nextTxId: 5,
+  nextApprovalId: 102,
+  transferTargetTeam: null
+};
+
+const fmt = n => '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+tab));
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>switchTab(t.dataset.tab)));
+
+function openModal(id){ document.getElementById(id).classList.add('active'); }
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+
+function dialSVG(pct, teamId){
+  const r = 52, c = 2*Math.PI*r;
+  const capped = Math.min(pct,100);
+  const offset = c - (capped/100)*c;
+  const color = pct >= 90 ? 'var(--rust)' : pct >= 70 ? 'var(--brass)' : 'var(--sage)';
+  let ticks = '';
+  for(let i=0;i<24;i++){
+    const angle = (i/24)*360;
+    ticks += `<line x1="65" y1="8" x2="65" y2="14" stroke="var(--paper-dim)" stroke-width="2"
+      transform="rotate(${angle} 65 65)" />`;
+  }
+  return `
+  <svg viewBox="0 0 130 130">
+    <circle cx="65" cy="65" r="${r}" fill="none" stroke="var(--ink-3)" stroke-width="9"/>
+    <circle cx="65" cy="65" r="${r}" fill="none" stroke="${color}" stroke-width="9"
+      stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+      transform="rotate(-90 65 65)"/>
+    <g opacity="0.5">${ticks}</g>
+    <circle cx="65" cy="65" r="4" fill="var(--brass)"/>
+  </svg>`;
+}
+
+function renderDashboard(){
+  document.getElementById('totalBalanceFig').textContent = fmt(state.totalBalance);
+  const allocated = state.teams.reduce((s,t)=>s+t.cap,0);
+  const unallocated = Math.max(state.totalBalance - allocated, 0);
+  const allocPct = Math.min((allocated/state.totalBalance)*100,100);
+  document.getElementById('splitBar').innerHTML =
+    `<div class="seg" style="width:${allocPct}%;background:var(--brass)"></div>
+     <div class="seg" style="width:${100-allocPct}%;background:var(--paper-dim)"></div>`;
+
+  document.getElementById('statTeams').textContent = state.teams.length;
+  document.getElementById('statPending').textContent = state.approvals.filter(a=>a.status==='pending').length;
+  const spentThisMonth = state.transactions.filter(t=>t.status==='approved').reduce((s,t)=>s+t.amount,0);
+  document.getElementById('statSpent').textContent = fmt(spentThisMonth);
+
+  document.getElementById('thresholdNote').textContent = fmt(state.threshold);
+}
+
+function renderTeams(){
+  const grid = document.getElementById('teamsGrid');
+  grid.innerHTML = state.teams.map(t=>{
+    const pct = Math.round((t.spent/t.cap)*100);
+    const remaining = Math.max(t.cap - t.spent,0);
+    return `
+    <div class="team-card">
+      <div class="team-name">${t.name}</div>
+      <div class="team-members">${t.members.join(', ')}</div>
+      <div class="dial-wrap">
+        ${dialSVG(pct, t.id)}
+        <div class="dial-center">
+          <div class="dial-remaining mono">${fmt(remaining)}</div>
+          <div class="dial-of">left of ${fmt(t.cap)}</div>
+        </div>
+      </div>
+      <div class="team-btns">
+        <button class="btn" onclick="openTransfer(${t.id})">Transfer</button>
+        <button class="btn primary" onclick="adjustCap(${t.id})">Adjust cap</button>
+      </div>
+    </div>`;
+  }).join('') + `<div class="add-team-card" onclick="openModal('overlayNewTeam')">+ Create a team</div>`;
+}
+
+function adjustCap(teamId){
+  const team = state.teams.find(t=>t.id===teamId);
+  const val = prompt(`New budget cap for ${team.name} (current: ${fmt(team.cap)})`, team.cap);
+  if(val===null) return;
+  const num = parseFloat(val);
+  if(isNaN(num) || num<=0){ alert('Enter a valid amount.'); return; }
+  team.cap = num;
+  renderAll();
+}
+
+function openTransfer(teamId){
+  const team = state.teams.find(t=>t.id===teamId);
+  state.transferTargetTeam = teamId;
+  document.getElementById('transferSub').textContent =
+    `Drawing from ${team.name}'s budget only (${fmt(team.cap - team.spent)} remaining) — not the company pot.`;
+  document.getElementById('transferRecipient').value = '';
+  document.getElementById('transferAmount').value = '';
+  document.getElementById('transferNote').style.display = 'none';
+  openModal('overlayTransfer');
+}
+
+document.getElementById('transferAmount').addEventListener('input', e=>{
+  const note = document.getElementById('transferNote');
+  note.style.display = (parseFloat(e.target.value)||0) > state.threshold ? 'block' : 'none';
+});
+
+function submitTransfer(){
+  const teamId = state.transferTargetTeam;
+  const team = state.teams.find(t=>t.id===teamId);
+  const recipient = document.getElementById('transferRecipient').value.trim() || 'Unnamed recipient';
+  const amount = parseFloat(document.getElementById('transferAmount').value);
+  if(!amount || amount<=0){ alert('Enter a valid amount.'); return; }
+  const remaining = team.cap - team.spent;
+  if(amount > remaining){ alert(`This exceeds ${team.name}'s remaining budget of ${fmt(remaining)}.`); return; }
+
+  if(amount > state.threshold){
+    state.approvals.push({ id: state.nextApprovalId++, teamId, teamName: team.name, desc: recipient, amount, status:'pending' });
+  } else {
+    team.spent += amount;
+    state.transactions.unshift({ id: state.nextTxId++, teamId, teamName: team.name, desc: recipient, amount, status:'approved', date:'Today' });
+  }
+  closeModal('overlayTransfer');
+  renderAll();
+}
+
+function createTeam(){
+  const name = document.getElementById('newTeamName').value.trim();
+  const cap = parseFloat(document.getElementById('newTeamCap').value);
+  const membersRaw = document.getElementById('newTeamMembers').value.trim();
+  if(!name || !cap || cap<=0){ alert('Enter a team name and a valid budget cap.'); return; }
+  const members = membersRaw ? membersRaw.split(',').map(s=>s.trim()).filter(Boolean) : ['Unassigned'];
+  state.teams.push({ id: state.nextTeamId++, name, cap, spent:0, members });
+  document.getElementById('newTeamName').value='';
+  document.getElementById('newTeamCap').value='';
+  document.getElementById('newTeamMembers').value='';
+  closeModal('overlayNewTeam');
+  renderAll();
+}
+
+function renderApprovals(){
+  const pending = state.approvals.filter(a=>a.status==='pending');
+  document.getElementById('approvalBadge').textContent = pending.length || '';
+  document.getElementById('approvalBadge').style.display = pending.length ? 'inline-block' : 'none';
+
+  const list = document.getElementById('approvalsList');
+  if(state.approvals.length===0){
+    list.innerHTML = `<div class="empty-state">No approval requests yet.</div>`;
+    return;
+  }
+  list.innerHTML = state.approvals.slice().reverse().map(a=>`
+    <div class="row">
+      <div class="r-team">${a.teamName}</div>
+      <div class="r-desc">${a.desc}</div>
+      <div class="r-amt">${fmt(a.amount)}</div>
+      <div class="r-status">
+        ${a.status==='pending' ? `
+          <button class="btn small" style="margin-right:6px" onclick="decideApproval(${a.id}, true)">Approve</button>
+          <button class="btn small danger" onclick="decideApproval(${a.id}, false)">Reject</button>
+        ` : `<span class="pill ${a.status}">${a.status}</span>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+function decideApproval(id, approve){
+  const a = state.approvals.find(x=>x.id===id);
+  a.status = approve ? 'approved' : 'rejected';
+  if(approve){
+    const team = state.teams.find(t=>t.id===a.teamId);
+    team.spent += a.amount;
+    state.transactions.unshift({ id: state.nextTxId++, teamId:a.teamId, teamName:a.teamName, desc:a.desc, amount:a.amount, status:'approved', date:'Today' });
+  }
+  renderAll();
+}
+
+function renderLedger(){
+  const filters = document.getElementById('ledgerFilters');
+  const names = ['all', ...state.teams.map(t=>t.name)];
+  filters.innerHTML = names.map(n=>`<button class="chip ${state.ledgerFilter===n?'active':''}" onclick="setLedgerFilter('${n}')">${n==='all'?'All teams':n}</button>`).join('');
+
+  const list = document.getElementById('ledgerList');
+  const rows = state.transactions.filter(t=> state.ledgerFilter==='all' || t.teamName===state.ledgerFilter);
+  if(rows.length===0){
+    list.innerHTML = `<div class="empty-state">No transactions for this filter.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(t=>`
+    <div class="row">
+      <div class="r-team">${t.teamName}</div>
+      <div class="r-desc">${t.desc} · ${t.date}</div>
+      <div class="r-amt">${fmt(t.amount)}</div>
+      <div class="r-status"><span class="pill ${t.status}">${t.status}</span></div>
+    </div>
+  `).join('');
+}
+
+function setLedgerFilter(name){ state.ledgerFilter = name; renderLedger(); }
+
+function renderAll(){
+  renderDashboard();
+  renderTeams();
+  renderApprovals();
+  renderLedger();
+}
+renderAll();
+</script>
+</body>
+</html>
