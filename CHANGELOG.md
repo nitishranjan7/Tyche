@@ -22,6 +22,10 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `650e183` — Link vendors to bills with spend rollup — revert to `f53ce4b`
+  Added `vendorId` to bills matching an existing vendor by name (Adobe,
+  WeWork, Figma). Vendors view gained Total spent (all linked bills) and
+  Last payment (most recent Paid bill's dueDate) columns, "—" when empty.
 - `29ae6d6` — Fix budget period filtering for card spend and align terminology to Admin — revert to `3063dde`
   `teamSpent()`'s `cardSum` wasn't gated by `periodStart` like the other sums,
   so card spend survived period resets. Added `lastChargeDate` per card and
