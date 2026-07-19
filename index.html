@@ -241,11 +241,13 @@
   .row .exp-date{width:56px;flex-shrink:0;color:var(--text-dim);}
   .row .exp-card{width:150px;flex-shrink:0;color:var(--text-dim);}
   .row .exp-merchant{flex:1;font-weight:600;}
+  .row .exp-team{width:90px;flex-shrink:0;color:var(--text-dim);font-size:12px;}
   .row .exp-status{width:100px;flex-shrink:0;text-align:right;}
 
   /* ---- Bills ---- */
   .row .bill-vendor{width:140px;flex-shrink:0;font-weight:600;}
   .row .bill-desc{flex:1;color:var(--text-dim);}
+  .row .bill-team{width:90px;flex-shrink:0;color:var(--text-dim);font-size:12px;}
   .row .bill-method{width:90px;flex-shrink:0;color:var(--text-dim);font-size:12px;}
   .row .bill-status{width:150px;flex-shrink:0;text-align:right;}
   .pill.for-submission{background:var(--ink-3);color:var(--text-dim);}
@@ -262,6 +264,7 @@
   /* ---- Cards ---- */
   .pill.frozen{background:var(--ink-3);color:var(--text-dim);}
   .row .card-name{width:160px;flex-shrink:0;font-weight:600;}
+  .row .card-team{width:90px;flex-shrink:0;color:var(--text-dim);font-size:12px;}
   .row .card-holders{width:100px;flex-shrink:0;color:var(--text-dim);}
   .row .card-usage{flex:1;padding-right:10px;}
   .row .card-usage .mini-bar{height:6px;border-radius:4px;background:var(--paper-dim);overflow:hidden;margin-bottom:5px;}
@@ -490,9 +493,9 @@ let state = {
   totalBalance: 184320,
   threshold: 2000,
   teams: [
-    { id:1, name:"Marketing", cap:12000, spent:7350, members:["A. Kade","R. Osei"] },
-    { id:2, name:"Engineering", cap:25000, spent:24100, members:["S. Vance","T. Idowu","L. Park"] },
-    { id:3, name:"Ops", cap:6000, spent:1180, members:["J. Marsh"] },
+    { id:1, name:"Marketing", cap:12000, members:["A. Kade","R. Osei"] },
+    { id:2, name:"Engineering", cap:25000, members:["S. Vance","T. Idowu","L. Park"] },
+    { id:3, name:"Ops", cap:6000, members:["J. Marsh"] },
   ],
   transactions: [
     { id:1, teamId:1, teamName:"Marketing", desc:"Meta Ads Ltd", amount:2200, status:"approved", date:"Jul 14" },
@@ -504,24 +507,24 @@ let state = {
     { id:101, teamId:2, teamName:"Engineering", desc:"Datadog annual plan", amount:3600, status:"pending" },
   ],
   expenses: [
-    { id:1, date:"Jul 16", card:"Amex Platinum ••3348", merchant:"Delta Air Lines", amount:612, status:"Approved" },
-    { id:2, date:"Jul 15", card:"Visa Business ••1027", merchant:"Staples", amount:84, status:"Incomplete" },
-    { id:3, date:"Jul 15", card:"Amex Platinum ••3348", merchant:"Uber", amount:38, status:"Approved" },
-    { id:4, date:"Jul 14", card:"Visa Business ••1027", merchant:"Notion Labs", amount:120, status:"Pending" },
-    { id:5, date:"Jul 12", card:"Amex Platinum ••3348", merchant:"Hilton Hotels", amount:940, status:"Incomplete" },
-    { id:6, date:"Jul 11", card:"Visa Business ••1027", merchant:"Adobe", amount:59, status:"Approved" },
-    { id:7, date:"Jul 9", card:"Amex Platinum ••3348", merchant:"Starbucks", amount:14, status:"Approved" },
-    { id:8, date:"Jul 8", card:"Visa Business ••1027", merchant:"Google Ads", amount:530, status:"Pending" },
+    { id:1, date:"Jul 16", card:"Amex Platinum ••3348", merchant:"Delta Air Lines", amount:612, status:"Approved", teamId:2 },
+    { id:2, date:"Jul 15", card:"Visa Business ••1027", merchant:"Staples", amount:84, status:"Incomplete", teamId:3 },
+    { id:3, date:"Jul 15", card:"Amex Platinum ••3348", merchant:"Uber", amount:38, status:"Approved", teamId:2 },
+    { id:4, date:"Jul 14", card:"Visa Business ••1027", merchant:"Notion Labs", amount:120, status:"Pending", teamId:2 },
+    { id:5, date:"Jul 12", card:"Amex Platinum ••3348", merchant:"Hilton Hotels", amount:940, status:"Incomplete", teamId:1 },
+    { id:6, date:"Jul 11", card:"Visa Business ••1027", merchant:"Adobe", amount:59, status:"Approved", teamId:1 },
+    { id:7, date:"Jul 9", card:"Amex Platinum ••3348", merchant:"Starbucks", amount:14, status:"Approved", teamId:3 },
+    { id:8, date:"Jul 8", card:"Visa Business ••1027", merchant:"Google Ads", amount:530, status:"Pending", teamId:1 },
   ],
   bills: [
-    { id:1, vendor:"Adobe", desc:"Creative Cloud annual", invoice:"INV-4471", amount:2400, dueDate:"2026-07-05", status:"For payment", method:"ACH" },
-    { id:2, vendor:"WeWork", desc:"Facilities · August", invoice:"INV-2210", amount:3150, dueDate:"2026-06-28", status:"For approval", method:"Wire" },
-    { id:3, vendor:"Google", desc:"Workspace seats", invoice:"INV-8832", amount:860, dueDate:"2026-07-22", status:"For submission", method:"ACH" },
-    { id:4, vendor:"LinkedIn", desc:"Recruiter licenses", invoice:"INV-1190", amount:1975, dueDate:"2026-07-30", status:"Sent for payment", method:"Card" },
-    { id:5, vendor:"Datadog", desc:"Observability plan", invoice:"INV-5567", amount:3600, dueDate:"2026-07-27", status:"Paid", method:"ACH" },
-    { id:6, vendor:"Slack", desc:"Workspace subscription", invoice:"INV-3321", amount:420, dueDate:"2026-08-05", status:"For submission", method:"ACH" },
-    { id:7, vendor:"AWS", desc:"Infra · July usage", invoice:"INV-9981", amount:4850, dueDate:"2026-08-12", status:"For approval", method:"Wire" },
-    { id:8, vendor:"Figma", desc:"Design seats", invoice:"INV-6674", amount:300, dueDate:"2026-08-01", status:"For payment", method:"Card" },
+    { id:1, vendor:"Adobe", desc:"Creative Cloud annual", invoice:"INV-4471", amount:2400, dueDate:"2026-07-05", status:"For payment", method:"ACH", teamId:1 },
+    { id:2, vendor:"WeWork", desc:"Facilities · August", invoice:"INV-2210", amount:3150, dueDate:"2026-06-28", status:"For approval", method:"Wire", teamId:3 },
+    { id:3, vendor:"Google", desc:"Workspace seats", invoice:"INV-8832", amount:860, dueDate:"2026-07-22", status:"For submission", method:"ACH", teamId:2 },
+    { id:4, vendor:"LinkedIn", desc:"Recruiter licenses", invoice:"INV-1190", amount:1975, dueDate:"2026-07-30", status:"Sent for payment", method:"Card", teamId:3 },
+    { id:5, vendor:"Datadog", desc:"Observability plan", invoice:"INV-5567", amount:3600, dueDate:"2026-07-27", status:"Paid", method:"ACH", teamId:2 },
+    { id:6, vendor:"Slack", desc:"Workspace subscription", invoice:"INV-3321", amount:420, dueDate:"2026-08-05", status:"For submission", method:"ACH", teamId:3 },
+    { id:7, vendor:"AWS", desc:"Infra · July usage", invoice:"INV-9981", amount:4850, dueDate:"2026-08-12", status:"For approval", method:"Wire", teamId:2 },
+    { id:8, vendor:"Figma", desc:"Design seats", invoice:"INV-6674", amount:300, dueDate:"2026-08-01", status:"For payment", method:"Card", teamId:1 },
   ],
   billFilter: "All",
   vendors: [
@@ -531,9 +534,9 @@ let state = {
     { id:4, name:"Figma Inc.", owner:"L. Park", payment:"Wells Fargo •••• 1188", status:"Active" },
   ],
   cards: [
-    { id:1, nickname:"Ops Travel", type:"Company", holders:4, spend:5200, limit:6000, status:"Active", expiry:"09/27" },
-    { id:2, nickname:"Engineering Cloud", type:"Company", holders:3, spend:9800, limit:10000, status:"Active", expiry:"03/28" },
-    { id:3, nickname:"R. Osei — Marketing", type:"Employee", holders:1, spend:640, limit:2000, status:"Frozen", expiry:"11/26" },
+    { id:1, nickname:"Ops Travel", type:"Company", holders:4, spend:5200, limit:6000, status:"Active", expiry:"09/27", teamId:3 },
+    { id:2, nickname:"Engineering Cloud", type:"Company", holders:3, spend:9800, limit:10000, status:"Active", expiry:"03/28", teamId:2 },
+    { id:3, nickname:"R. Osei — Marketing", type:"Employee", holders:1, spend:640, limit:2000, status:"Frozen", expiry:"11/26", teamId:1 },
   ],
   analyticsMode: "vendor",
   ledgerFilter: "all",
@@ -555,6 +558,15 @@ function openModal(id){ document.getElementById(id).classList.add('active'); }
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
 
 const usageColor = pct => pct >= 90 ? 'var(--rust)' : pct >= 70 ? 'var(--brass)' : 'var(--sage)';
+const teamName = id => (state.teams.find(t=>t.id===id) || {}).name || '—';
+
+function teamSpent(teamId){
+  const txSum = state.transactions.filter(t=>t.teamId===teamId && t.status==='approved').reduce((s,t)=>s+t.amount,0);
+  const expSum = state.expenses.filter(e=>e.teamId===teamId).reduce((s,e)=>s+e.amount,0);
+  const billSum = state.bills.filter(b=>b.teamId===teamId && (b.status==='Sent for payment' || b.status==='Paid')).reduce((s,b)=>s+b.amount,0);
+  const cardSum = state.cards.filter(c=>c.teamId===teamId).reduce((s,c)=>s+c.spend,0);
+  return txSum + expSum + billSum + cardSum;
+}
 
 function dialSVG(pct, teamId){
   const r = 52, c = 2*Math.PI*r;
@@ -597,8 +609,9 @@ function renderDashboard(){
 function renderTeams(){
   const grid = document.getElementById('teamsGrid');
   grid.innerHTML = state.teams.map(t=>{
-    const pct = Math.round((t.spent/t.cap)*100);
-    const remaining = Math.max(t.cap - t.spent,0);
+    const spent = teamSpent(t.id);
+    const pct = Math.round((spent/t.cap)*100);
+    const remaining = Math.max(t.cap - spent,0);
     return `
     <div class="team-card">
       <div class="team-name">${t.name}</div>
@@ -632,7 +645,7 @@ function openTransfer(teamId){
   const team = state.teams.find(t=>t.id===teamId);
   state.transferTargetTeam = teamId;
   document.getElementById('transferSub').textContent =
-    `Drawing from ${team.name}'s budget only (${fmt(team.cap - team.spent)} remaining) — not the company pot.`;
+    `Drawing from ${team.name}'s budget only (${fmt(team.cap - teamSpent(team.id))} remaining) — not the company pot.`;
   document.getElementById('transferRecipient').value = '';
   document.getElementById('transferAmount').value = '';
   document.getElementById('transferNote').style.display = 'none';
@@ -650,13 +663,12 @@ function submitTransfer(){
   const recipient = document.getElementById('transferRecipient').value.trim() || 'Unnamed recipient';
   const amount = parseFloat(document.getElementById('transferAmount').value);
   if(!amount || amount<=0){ alert('Enter a valid amount.'); return; }
-  const remaining = team.cap - team.spent;
+  const remaining = team.cap - teamSpent(team.id);
   if(amount > remaining){ alert(`This exceeds ${team.name}'s remaining budget of ${fmt(remaining)}.`); return; }
 
   if(amount > state.threshold){
     state.approvals.push({ id: state.nextApprovalId++, teamId, teamName: team.name, desc: recipient, amount, status:'pending' });
   } else {
-    team.spent += amount;
     state.transactions.unshift({ id: state.nextTxId++, teamId, teamName: team.name, desc: recipient, amount, status:'approved', date:'Today' });
   }
   closeModal('overlayTransfer');
@@ -669,7 +681,7 @@ function createTeam(){
   const membersRaw = document.getElementById('newTeamMembers').value.trim();
   if(!name || !cap || cap<=0){ alert('Enter a team name and a valid budget cap.'); return; }
   const members = membersRaw ? membersRaw.split(',').map(s=>s.trim()).filter(Boolean) : ['Unassigned'];
-  state.teams.push({ id: state.nextTeamId++, name, cap, spent:0, members });
+  state.teams.push({ id: state.nextTeamId++, name, cap, members });
   document.getElementById('newTeamName').value='';
   document.getElementById('newTeamCap').value='';
   document.getElementById('newTeamMembers').value='';
@@ -706,8 +718,6 @@ function decideApproval(id, approve){
   const a = state.approvals.find(x=>x.id===id);
   a.status = approve ? 'approved' : 'rejected';
   if(approve){
-    const team = state.teams.find(t=>t.id===a.teamId);
-    team.spent += a.amount;
     state.transactions.unshift({ id: state.nextTxId++, teamId:a.teamId, teamName:a.teamName, desc:a.desc, amount:a.amount, status:'approved', date:'Today' });
   }
   renderAll();
@@ -747,6 +757,7 @@ function renderExpenses(){
       <div class="exp-date">${e.date}</div>
       <div class="exp-card">${e.card}</div>
       <div class="exp-merchant">${e.merchant}</div>
+      <div class="exp-team">${teamName(e.teamId)}</div>
       <div class="r-amt">${fmt(e.amount)}</div>
       <div class="exp-status"><span class="pill ${e.status.toLowerCase()}">${e.status}</span></div>
     </div>
@@ -801,6 +812,7 @@ function renderBills(){
     <div class="row">
       <div class="bill-vendor">${b.vendor}</div>
       <div class="bill-desc">${b.desc} · ${b.invoice}</div>
+      <div class="bill-team">${teamName(b.teamId)}</div>
       <div class="r-amt">${fmt(b.amount)}</div>
       <div class="bill-method">${b.method}</div>
       <div class="bill-status"><span class="pill ${statusClass(b.status)}">${b.status}</span></div>
@@ -843,6 +855,7 @@ function renderCards(){
     return `
     <div class="row">
       <div class="card-name">${c.nickname}</div>
+      <div class="card-team">${teamName(c.teamId)}</div>
       <div class="card-holders">${c.holders} cardholder${c.holders===1?'':'s'}</div>
       <div class="card-usage">
         <div class="mini-bar"><div class="fill" style="width:${pct}%;background:${usageColor(pct)}"></div></div>
