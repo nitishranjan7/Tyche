@@ -392,7 +392,7 @@
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <h1>Dashboard</h1>
-      <p class="subhead" id="dashboardSubhead">Only you can see the full company balance. Team leads only see their own budget.</p>
+      <p class="subhead" id="dashboardSubhead">Only Admin can see the full company balance. Team leads only see their own budget.</p>
 
       <div id="dashboardTopCard"></div>
 
@@ -595,9 +595,9 @@ let state = {
     { id:4, name:"Figma Inc.", owner:"L. Park", payment:"Wells Fargo •••• 1188", status:"Active" },
   ],
   cards: [
-    { id:1, nickname:"Ops Travel", type:"Company", holders:4, spend:5200, limit:6000, status:"Active", expiry:"09/27", teamId:3 },
-    { id:2, nickname:"Engineering Cloud", type:"Company", holders:3, spend:9800, limit:10000, status:"Active", expiry:"03/28", teamId:2 },
-    { id:3, nickname:"R. Osei — Marketing", type:"Employee", holders:1, spend:640, limit:2000, status:"Frozen", expiry:"11/26", teamId:1 },
+    { id:1, nickname:"Ops Travel", type:"Company", holders:4, spend:5200, limit:6000, status:"Active", expiry:"09/27", teamId:3, lastChargeDate:"2026-07-15" },
+    { id:2, nickname:"Engineering Cloud", type:"Company", holders:3, spend:9800, limit:10000, status:"Active", expiry:"03/28", teamId:2, lastChargeDate:"2026-07-17" },
+    { id:3, nickname:"R. Osei — Marketing", type:"Employee", holders:1, spend:640, limit:2000, status:"Frozen", expiry:"11/26", teamId:1, lastChargeDate:"2026-07-10" },
   ],
   analyticsMode: "vendor",
   ledgerFilter: "all",
@@ -631,7 +631,7 @@ function teamSpent(teamId){
   const txSum = state.transactions.filter(t=>t.teamId===teamId && t.status==='approved' && onOrAfter(t.dateISO)).reduce((s,t)=>s+t.amount,0);
   const expSum = state.expenses.filter(e=>e.teamId===teamId && onOrAfter(e.dateISO)).reduce((s,e)=>s+e.amount,0);
   const billSum = state.bills.filter(b=>b.teamId===teamId && (b.status==='Sent for payment' || b.status==='Paid') && onOrAfter(b.dueDate)).reduce((s,b)=>s+b.amount,0);
-  const cardSum = state.cards.filter(c=>c.teamId===teamId).reduce((s,c)=>s+c.spend,0);
+  const cardSum = state.cards.filter(c=>c.teamId===teamId && onOrAfter(c.lastChargeDate)).reduce((s,c)=>s+c.spend,0);
   return txSum + expSum + billSum + cardSum;
 }
 
@@ -706,7 +706,7 @@ function renderDashboard(){
   const subhead = document.getElementById('dashboardSubhead');
 
   if(isAdmin()){
-    subhead.textContent = 'Only you can see the full company balance. Team leads only see their own budget.';
+    subhead.textContent = 'Only Admin can see the full company balance. Team leads only see their own budget.';
 
     const allocated = state.teams.reduce((s,t)=>s+t.cap,0);
     const allocPct = Math.min((allocated/state.totalBalance)*100,100);
@@ -714,10 +714,10 @@ function renderDashboard(){
       <div class="pot-card">
         <div class="pot-top">
           <div>
-            <div class="pot-label">Total balance · owner view</div>
+            <div class="pot-label">Total balance · admin view</div>
             <div class="pot-figure mono">${fmt(state.totalBalance)}</div>
           </div>
-          <div class="pot-visible-note">🔒 Visible to root owner only</div>
+          <div class="pot-visible-note">🔒 Visible to Admin only</div>
         </div>
         <div class="split-bar">
           <div class="seg" style="width:${allocPct}%;background:var(--brass)"></div>
