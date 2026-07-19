@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tyche — Teams & Budgets</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -360,6 +361,42 @@
   .modal-note{font-size:11.5px;color:var(--brass-text);background:rgba(201,154,63,.1);padding:8px 10px;border-radius:7px;margin-bottom:14px;display:none;}
   .modal-btns{display:flex;gap:10px;margin-top:20px;}
 
+  /* ---- Dense row stacking (Expenses/Bills/Cards/Vendors) ----
+     .row-primary/.row-secondary are display:contents by default, so their
+     children lay out as ordinary direct flex children of .row on desktop.
+     The `order` values below reproduce each view's original left-to-right
+     column order there. At the 760px breakpoint the wrappers become real
+     flex rows instead (see media query), stacking the row into two lines;
+     `order` still applies, now scoped to each wrapper's own children. */
+  .row-primary,.row-secondary{display:contents;}
+  #view-expenses .exp-date{order:1;}
+  #view-expenses .exp-card{order:2;}
+  #view-expenses .exp-merchant{order:3;}
+  #view-expenses .exp-team{order:4;}
+  #view-expenses .r-amt{order:5;}
+  #view-expenses .exp-status{order:6;}
+
+  #view-bills .bill-vendor{order:1;}
+  #view-bills .bill-desc{order:2;}
+  #view-bills .bill-team{order:3;}
+  #view-bills .r-amt{order:4;}
+  #view-bills .bill-method{order:5;}
+  #view-bills .bill-status{order:6;}
+
+  #view-cards .card-name{order:1;}
+  #view-cards .card-team{order:2;}
+  #view-cards .card-holders{order:3;}
+  #view-cards .card-usage{order:4;}
+  #view-cards .card-status{order:5;}
+  #view-cards .card-expiry{order:6;}
+
+  #view-vendors .vendor-name{order:1;}
+  #view-vendors .vendor-owner{order:2;}
+  #view-vendors .vendor-payment{order:3;}
+  #view-vendors .vendor-spent{order:4;}
+  #view-vendors .vendor-lastpay{order:5;}
+  #view-vendors .vendor-status{order:6;}
+
   @media (max-width:760px){
     .app{flex-direction:column;}
     .rail{width:100%;flex-direction:row;overflow-x:auto;padding:12px;}
@@ -368,6 +405,29 @@
     .tab.active{border-left:none;border-bottom:3px solid var(--brass);}
     .main{padding:24px 18px 40px;}
     .grid-3{grid-template-columns:1fr;}
+
+    #view-expenses .row, #view-bills .row, #view-cards .row, #view-vendors .row{
+      flex-direction:column;
+      align-items:stretch;
+      row-gap:8px;
+    }
+    .row-primary{
+      display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;
+    }
+    .row-secondary{
+      display:flex;width:100%;flex-wrap:wrap;align-items:center;gap:6px 14px;
+      font-size:12px;color:var(--text-dim);
+    }
+    #view-expenses .row-secondary > *,
+    #view-bills .row-secondary > *,
+    #view-cards .row-secondary > *,
+    #view-vendors .row-secondary > *{
+      width:auto;flex:none;text-align:left;
+    }
+    .row-secondary .pill{font-size:10.5px;}
+    #view-cards .row-secondary .card-usage{flex-basis:100%;padding-right:0;}
+    #view-bills .row-secondary .bill-desc{flex-basis:100%;}
+    #view-bills .row-secondary .bill-status{flex-direction:row;align-items:center;gap:8px;}
   }
 </style>
 </head>
@@ -1017,12 +1077,16 @@ function renderExpenses(){
   }
   list.innerHTML = data.map(e=>`
     <div class="row">
-      <div class="exp-date">${e.date}</div>
-      <div class="exp-card">${e.card}</div>
-      <div class="exp-merchant">${e.merchant}</div>
-      <div class="exp-team">${teamName(e.teamId)}</div>
-      <div class="r-amt">${fmt(e.amount)}</div>
-      <div class="exp-status"><span class="pill ${e.status.toLowerCase()}">${e.status}</span></div>
+      <div class="row-primary">
+        <div class="exp-merchant">${e.merchant}</div>
+        <div class="r-amt">${fmt(e.amount)}</div>
+      </div>
+      <div class="row-secondary">
+        <div class="exp-date">${e.date}</div>
+        <div class="exp-card">${e.card}</div>
+        <div class="exp-team">${teamName(e.teamId)}</div>
+        <div class="exp-status"><span class="pill ${e.status.toLowerCase()}">${e.status}</span></div>
+      </div>
     </div>
   `).join('');
 }
@@ -1074,14 +1138,18 @@ function renderBills(){
   }
   list.innerHTML = rows.map(b=>`
     <div class="row">
-      <div class="bill-vendor">${b.vendor}</div>
-      <div class="bill-desc">${b.desc} · ${b.invoice}</div>
-      <div class="bill-team">${teamName(b.teamId)}</div>
-      <div class="r-amt">${fmt(b.amount)}</div>
-      <div class="bill-method">${b.method}</div>
-      <div class="bill-status">
-        ${b.status!=='Paid' ? `<button class="btn small" onclick="advanceBillStatus(${b.id})">Mark as paid</button>` : ''}
-        <span class="pill ${statusClass(b.status)}">${b.status}</span>
+      <div class="row-primary">
+        <div class="bill-vendor">${b.vendor}</div>
+        <div class="r-amt">${fmt(b.amount)}</div>
+      </div>
+      <div class="row-secondary">
+        <div class="bill-desc">${b.desc} · ${b.invoice}</div>
+        <div class="bill-team">${teamName(b.teamId)}</div>
+        <div class="bill-method">${b.method}</div>
+        <div class="bill-status">
+          ${b.status!=='Paid' ? `<button class="btn small" onclick="advanceBillStatus(${b.id})">Mark as paid</button>` : ''}
+          <span class="pill ${statusClass(b.status)}">${b.status}</span>
+        </div>
       </div>
     </div>
   `).join('');
@@ -1124,12 +1192,16 @@ function renderVendors(){
       : null;
     return `
     <div class="row">
-      <div class="vendor-name">${v.name}</div>
-      <div class="vendor-owner">${v.owner}</div>
-      <div class="vendor-payment">${v.payment}</div>
-      <div class="vendor-spent">${totalSpent ? fmt(totalSpent) : '—'}</div>
-      <div class="vendor-lastpay">${lastPayment ? fmtDate(lastPayment) : '—'}</div>
-      <div class="vendor-status"><span class="pill ${v.status.toLowerCase()}">${v.status}</span></div>
+      <div class="row-primary">
+        <div class="vendor-name">${v.name}</div>
+        <div class="vendor-status"><span class="pill ${v.status.toLowerCase()}">${v.status}</span></div>
+      </div>
+      <div class="row-secondary">
+        <div class="vendor-owner">${v.owner}</div>
+        <div class="vendor-payment">${v.payment}</div>
+        <div class="vendor-spent">${totalSpent ? fmt(totalSpent) : '—'}</div>
+        <div class="vendor-lastpay">${lastPayment ? fmtDate(lastPayment) : '—'}</div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1155,15 +1227,19 @@ function renderCards(){
     const pct = Math.min(Math.round((c.spend/c.limit)*100),100);
     return `
     <div class="row">
-      <div class="card-name">${c.nickname}</div>
-      <div class="card-team">${teamName(c.teamId)}</div>
-      <div class="card-holders">${c.holders} cardholder${c.holders===1?'':'s'}</div>
-      <div class="card-usage">
-        <div class="mini-bar"><div class="fill" style="width:${pct}%;background:${usageColor(pct)}"></div></div>
-        <div class="amt"><b>${fmt(c.spend)}</b> / ${fmt(c.limit)} this month</div>
+      <div class="row-primary">
+        <div class="card-name">${c.nickname}</div>
+        <div class="card-status"><span class="pill ${c.status.toLowerCase()}">${c.status}</span></div>
       </div>
-      <div class="card-status"><span class="pill ${c.status.toLowerCase()}">${c.status}</span></div>
-      <div class="card-expiry">${c.expiry}</div>
+      <div class="row-secondary">
+        <div class="card-team">${teamName(c.teamId)}</div>
+        <div class="card-holders">${c.holders} cardholder${c.holders===1?'':'s'}</div>
+        <div class="card-usage">
+          <div class="mini-bar"><div class="fill" style="width:${pct}%;background:${usageColor(pct)}"></div></div>
+          <div class="amt"><b>${fmt(c.spend)}</b> / ${fmt(c.limit)} this month</div>
+        </div>
+        <div class="card-expiry">${c.expiry}</div>
+      </div>
     </div>`;
   }).join('');
 }
