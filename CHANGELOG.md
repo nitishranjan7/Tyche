@@ -22,6 +22,11 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `29ae6d6` — Fix budget period filtering for card spend and align terminology to Admin — revert to `3063dde`
+  `teamSpent()`'s `cardSum` wasn't gated by `periodStart` like the other sums,
+  so card spend survived period resets. Added `lastChargeDate` per card and
+  filtered it the same way; also swapped "root owner"/"owner view" copy on
+  the Dashboard for "Admin" to match the view-selector terminology.
 - `2d56237` — Replace native prompt with styled modal for budget cap adjustment — revert to `ec9c53f`
   `adjustCap()` no longer uses `prompt()`; opens a modal pre-filled with the
   team's current cap instead, matching the existing overlay/field pattern.
