@@ -446,8 +446,13 @@
 
     <!-- LEDGER -->
     <div class="view" id="view-ledger">
-      <h1>Ledger</h1>
-      <p class="subhead">Every transfer, filterable by team.</p>
+      <div class="view-header-row">
+        <div>
+          <h1>Ledger</h1>
+          <p class="subhead">Every transfer, filterable by team.</p>
+        </div>
+        <button class="btn small" id="ledgerExportBtn" onclick="exportLedgerCSV()">Export CSV</button>
+      </div>
       <div class="list-toolbar">
         <div class="ledger-filters" id="ledgerFilters"></div>
         <input class="search-input" id="ledgerSearch" placeholder="Search recipient or description…" oninput="setSearch('ledger', this.value)">
@@ -471,8 +476,13 @@
 
     <!-- BILLS -->
     <div class="view" id="view-bills">
-      <h1>Bills</h1>
-      <p class="subhead">Vendor invoices moving from submission through payment.</p>
+      <div class="view-header-row">
+        <div>
+          <h1>Bills</h1>
+          <p class="subhead">Vendor invoices moving from submission through payment.</p>
+        </div>
+        <button class="btn small" id="billsExportBtn" onclick="exportBillsCSV()">Export CSV</button>
+      </div>
 
       <div class="grid-3" id="billsSummary"></div>
 
@@ -935,11 +945,8 @@ function renderLedger(){
   }
 
   const list = document.getElementById('ledgerList');
-  let rows = isAdmin()
-    ? state.transactions.filter(t=> state.ledgerFilter==='all' || t.teamName===state.ledgerFilter)
-    : state.transactions.filter(t=> t.teamId===currentTeamId());
+  const rows = ledgerRows();
   const q = state.search.ledger.trim().toLowerCase();
-  if(q) rows = rows.filter(t=> t.desc.toLowerCase().includes(q));
   if(rows.length===0){
     list.innerHTML = `<div class="empty-state">${q ? 'No transactions match your search.' : 'No transactions for this filter.'}</div>`;
     return;
@@ -956,8 +963,41 @@ function renderLedger(){
 
 function setLedgerFilter(name){ state.ledgerFilter = name; renderLedger(); }
 
+function ledgerRows(){
+  let rows = isAdmin()
+    ? state.transactions.filter(t=> state.ledgerFilter==='all' || t.teamName===state.ledgerFilter)
+    : state.transactions.filter(t=> t.teamId===currentTeamId());
+  const q = state.search.ledger.trim().toLowerCase();
+  if(q) rows = rows.filter(t=> t.desc.toLowerCase().includes(q));
+  return rows;
+}
+
 const RENDER_BY_SEARCH_KEY = { ledger:()=>renderLedger(), expenses:()=>renderExpenses(), bills:()=>renderBills(), vendors:()=>renderVendors() };
 function setSearch(key, value){ state.search[key] = value; RENDER_BY_SEARCH_KEY[key](); }
+
+function downloadCSV(filename, headers, rows){
+  const escape = v => `"${String(v).replace(/"/g,'""')}"`;
+  const csv = [headers, ...rows].map(r=>r.map(escape).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportLedgerCSV(){
+  const rows = ledgerRows().map(t=>[t.teamName, t.desc, t.date, t.amount, t.status]);
+  downloadCSV('ledger.csv', ['Team','Recipient / Description','Date','Amount','Status'], rows);
+}
+
+function exportBillsCSV(){
+  const rows = billRows(billsScoped()).map(b=>[b.vendor, b.desc, b.invoice, teamName(b.teamId), b.amount, b.method, b.status]);
+  downloadCSV('bills.csv', ['Vendor','Description','Invoice','Team','Amount','Method','Status'], rows);
+}
 
 function renderExpenses(){
   let data = isAdmin() ? state.expenses : state.expenses.filter(e=>e.teamId===currentTeamId());
@@ -1014,7 +1054,7 @@ function renderBillsSummary(bills){
 }
 
 function renderBills(){
-  const scoped = isAdmin() ? state.bills : state.bills.filter(b=>b.teamId===currentTeamId());
+  const scoped = billsScoped();
   renderBillsSummary(scoped);
 
   const names = ['All', ...BILL_STATUSES];
@@ -1023,9 +1063,8 @@ function renderBills(){
   ).join('');
 
   const list = document.getElementById('billsList');
-  let rows = scoped.filter(b=> state.billFilter==='All' || b.status===state.billFilter);
+  const rows = billRows(scoped);
   const q = state.search.bills.trim().toLowerCase();
-  if(q) rows = rows.filter(b=> b.vendor.toLowerCase().includes(q) || b.desc.toLowerCase().includes(q) || b.invoice.toLowerCase().includes(q));
   if(rows.length===0){
     list.innerHTML = `<div class="empty-state">${q ? 'No bills match your search.' : 'No bills for this filter.'}</div>`;
     return;
@@ -1046,6 +1085,15 @@ function renderBills(){
 }
 
 function setBillFilter(name){ state.billFilter = name; renderBills(); }
+
+function billsScoped(){ return isAdmin() ? state.bills : state.bills.filter(b=>b.teamId===currentTeamId()); }
+
+function billRows(scoped){
+  let rows = scoped.filter(b=> state.billFilter==='All' || b.status===state.billFilter);
+  const q = state.search.bills.trim().toLowerCase();
+  if(q) rows = rows.filter(b=> b.vendor.toLowerCase().includes(q) || b.desc.toLowerCase().includes(q) || b.invoice.toLowerCase().includes(q));
+  return rows;
+}
 
 function advanceBillStatus(id){
   const bill = state.bills.find(b=>b.id===id);
@@ -1213,6 +1261,8 @@ function applyRoleVisibility(){
   document.getElementById('settingsBtn').style.display = admin ? '' : 'none';
   document.getElementById('periodControls').style.display = admin ? '' : 'none';
   document.getElementById('addCardTile').style.display = admin ? '' : 'none';
+  document.getElementById('ledgerExportBtn').style.display = admin ? '' : 'none';
+  document.getElementById('billsExportBtn').style.display = admin ? '' : 'none';
   if(!admin){
     const activeTab = document.querySelector('.tab.active')?.dataset.tab;
     if(activeTab==='vendors' || activeTab==='analytics') switchTab('dashboard');
