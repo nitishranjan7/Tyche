@@ -22,6 +22,10 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `ebc7212` — Add spend-by-team analytics mode — revert to `3b91fff`
+  Third "By team" Analytics toggle, one bar per team. `teamSpent()` gained an
+  optional `since` param (defaults to `state.periodStart`) so this mode can
+  call it with an all-time override, matching the existing vendor/month modes.
 - `650e183` — Link vendors to bills with spend rollup — revert to `f53ce4b`
   Added `vendorId` to bills matching an existing vendor by name (Adobe,
   WeWork, Figma). Vendors view gained Total spent (all linked bills) and
