@@ -22,6 +22,11 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `4124f6a` — Complete vendor-bill linkage for all vendors — revert to `8d361f7`
+  Added Datadog, AWS, Google, LinkedIn, and Slack to `state.vendors` (owner
+  names drawn from existing team members, invented payment details matching
+  the existing style). Added `vendorId` to the 5 bills that were still
+  missing one, so every bill now links to a vendor.
 - `5b404be` — Add mark-as-paid to Bills and card issuance to Cards — revert to `cdb3dd9`
   Bills gets a "Mark as paid" button (advances one pipeline step per click,
   available to both roles). Cards gets a "+ Add card" tile/modal (nickname,
