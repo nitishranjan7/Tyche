@@ -225,8 +225,22 @@
   }
   .pill.pending{background:rgba(201,154,63,.18);color:var(--brass-text);}
   .pill.approved{background:rgba(125,160,138,.18);color:var(--sage-text);}
-  .pill.rejected{background:rgba(193,96,74,.18);color:var(--rust-text);}
+  .pill.rejected,.pill.incomplete{background:rgba(193,96,74,.18);color:var(--rust-text);}
   .empty-state{padding:40px 20px;text-align:center;color:var(--text-dim);font-size:13px;}
+
+  /* ---- Stat callout (single big figure + caption) ---- */
+  .stat-callout{
+    background:var(--ink-2);border:1px solid var(--line);border-radius:10px;
+    padding:18px 22px;margin-bottom:20px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  }
+  .stat-callout .figure{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;}
+  .stat-callout .label{font-size:13px;color:var(--text-dim);}
+
+  /* ---- Expenses ---- */
+  .row .exp-date{width:56px;flex-shrink:0;color:var(--text-dim);}
+  .row .exp-card{width:150px;flex-shrink:0;color:var(--text-dim);}
+  .row .exp-merchant{flex:1;font-weight:600;}
+  .row .exp-status{width:100px;flex-shrink:0;text-align:right;}
 
   .ledger-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .chip{
@@ -277,6 +291,7 @@
     <div class="tab" data-tab="teams">Teams & Budgets</div>
     <div class="tab" data-tab="approvals">Approvals <span class="badge" id="approvalBadge"></span></div>
     <div class="tab" data-tab="ledger">Ledger</div>
+    <div class="tab" data-tab="expenses">Expenses</div>
     <div class="rail-footer">Fintech Beta Labs Ltd<br>Demo workspace · mock data</div>
   </div>
 
@@ -331,6 +346,17 @@
       <div class="row-list" id="ledgerList"></div>
     </div>
 
+    <!-- EXPENSES -->
+    <div class="view" id="view-expenses">
+      <h1>Expenses</h1>
+      <p class="subhead">Card transactions awaiting receipts and categorization.</p>
+      <div class="stat-callout">
+        <div class="figure mono" id="expSubmissionRate">0%</div>
+        <div class="label">of expenses submitted with receipts</div>
+      </div>
+      <div class="row-list" id="expensesList"></div>
+    </div>
+
   </div>
 </div>
 
@@ -381,6 +407,16 @@ let state = {
   ],
   approvals: [
     { id:101, teamId:2, teamName:"Engineering", desc:"Datadog annual plan", amount:3600, status:"pending" },
+  ],
+  expenses: [
+    { id:1, date:"Jul 16", card:"Amex Platinum ••3348", merchant:"Delta Air Lines", amount:612, status:"Approved" },
+    { id:2, date:"Jul 15", card:"Visa Business ••1027", merchant:"Staples", amount:84, status:"Incomplete" },
+    { id:3, date:"Jul 15", card:"Amex Platinum ••3348", merchant:"Uber", amount:38, status:"Approved" },
+    { id:4, date:"Jul 14", card:"Visa Business ••1027", merchant:"Notion Labs", amount:120, status:"Pending" },
+    { id:5, date:"Jul 12", card:"Amex Platinum ••3348", merchant:"Hilton Hotels", amount:940, status:"Incomplete" },
+    { id:6, date:"Jul 11", card:"Visa Business ••1027", merchant:"Adobe", amount:59, status:"Approved" },
+    { id:7, date:"Jul 9", card:"Amex Platinum ••3348", merchant:"Starbucks", amount:14, status:"Approved" },
+    { id:8, date:"Jul 8", card:"Visa Business ••1027", merchant:"Google Ads", amount:530, status:"Pending" },
   ],
   ledgerFilter: "all",
   nextTeamId: 4,
@@ -580,11 +616,29 @@ function renderLedger(){
 
 function setLedgerFilter(name){ state.ledgerFilter = name; renderLedger(); }
 
+function renderExpenses(){
+  const total = state.expenses.length;
+  const submitted = state.expenses.filter(e=>e.status!=='Incomplete').length;
+  document.getElementById('expSubmissionRate').textContent = total ? Math.round((submitted/total)*100)+'%' : '0%';
+
+  const list = document.getElementById('expensesList');
+  list.innerHTML = state.expenses.map(e=>`
+    <div class="row">
+      <div class="exp-date">${e.date}</div>
+      <div class="exp-card">${e.card}</div>
+      <div class="exp-merchant">${e.merchant}</div>
+      <div class="r-amt">${fmt(e.amount)}</div>
+      <div class="exp-status"><span class="pill ${e.status.toLowerCase()}">${e.status}</span></div>
+    </div>
+  `).join('');
+}
+
 function renderAll(){
   renderDashboard();
   renderTeams();
   renderApprovals();
   renderLedger();
+  renderExpenses();
 }
 renderAll();
 </script>
