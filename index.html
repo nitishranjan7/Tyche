@@ -7,18 +7,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#14181D;
-    --ink-2:#1B212A;
-    --ink-3:#232A34;
+    --ink:#FAF9F6;
+    --ink-2:#F4F3EF;
+    --ink-3:#EAE8E1;
     --paper:#EDE7DA;
-    --paper-dim:#3A414C;
+    --paper-dim:#E5E3DC;
     --brass:#C99A3F;
     --brass-bright:#E0B65E;
     --sage:#7DA08A;
     --rust:#C1604A;
-    --text-dim:#8B93A0;
-    --text-light:#F3F0E8;
-    --line:#2C333D;
+    --text-dim:#5F6B7A;
+    --text-light:#1B1F24;
+    --line:#E2E0D9;
+    /* darker, text-safe tints of the accents above — used wherever brass/sage/rust
+       need to render as small text on this light background, since the bright
+       accent tones fall below readable contrast there */
+    --brass-text:#8C6A1D;
+    --sage-text:#4F7860;
+    --rust-text:#984333;
   }
   *{box-sizing:border-box;}
   body{
@@ -53,7 +59,7 @@
     border-bottom:1px solid var(--line);
     margin-bottom:8px;
   }
-  .brand span{color:var(--brass-bright);}
+  .brand span{color:var(--brass-text);}
   .tab{
     position:relative;
     padding:13px 20px 13px 22px;
@@ -65,7 +71,7 @@
     transition:background .15s ease,color .15s ease;
     user-select:none;
   }
-  .tab:hover{color:var(--text-light);background:rgba(255,255,255,.03);}
+  .tab:hover{color:var(--text-light);background:rgba(20,24,29,.04);}
   .tab.active{
     color:var(--text-light);
     background:var(--ink-3);
@@ -125,7 +131,7 @@
   .pot-top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;}
   .pot-label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;}
   .pot-figure{font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;color:var(--text-light);}
-  .pot-visible-note{font-size:11.5px;color:var(--brass-bright);}
+  .pot-visible-note{font-size:11.5px;color:var(--brass-text);}
 
   .split-bar{
     margin-top:20px;
@@ -199,7 +205,7 @@
     min-height:236px;
     transition:border-color .15s ease,color .15s ease;
   }
-  .add-team-card:hover{border-color:var(--brass);color:var(--brass-bright);}
+  .add-team-card:hover{border-color:var(--brass);color:var(--brass-text);}
 
   /* ---- Approvals & Ledger ---- */
   .row-list{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
@@ -217,9 +223,9 @@
   .pill{
     display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
   }
-  .pill.pending{background:rgba(201,154,63,.18);color:var(--brass-bright);}
-  .pill.approved{background:rgba(125,160,138,.18);color:var(--sage);}
-  .pill.rejected{background:rgba(193,96,74,.18);color:var(--rust);}
+  .pill.pending{background:rgba(201,154,63,.18);color:var(--brass-text);}
+  .pill.approved{background:rgba(125,160,138,.18);color:var(--sage-text);}
+  .pill.rejected{background:rgba(193,96,74,.18);color:var(--rust-text);}
   .empty-state{padding:40px 20px;text-align:center;color:var(--text-dim);font-size:13px;}
 
   .ledger-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
@@ -248,7 +254,7 @@
     background:var(--ink);color:var(--text-light);font-size:13.5px;font-family:'Inter',sans-serif;
   }
   .field input:focus,.field select:focus{outline:none;border-color:var(--brass);}
-  .modal-note{font-size:11.5px;color:var(--brass-bright);background:rgba(201,154,63,.1);padding:8px 10px;border-radius:7px;margin-bottom:14px;display:none;}
+  .modal-note{font-size:11.5px;color:var(--brass-text);background:rgba(201,154,63,.1);padding:8px 10px;border-radius:7px;margin-bottom:14px;display:none;}
   .modal-btns{display:flex;gap:10px;margin-top:20px;}
 
   @media (max-width:760px){
@@ -271,7 +277,7 @@
     <div class="tab" data-tab="teams">Teams & Budgets</div>
     <div class="tab" data-tab="approvals">Approvals <span class="badge" id="approvalBadge"></span></div>
     <div class="tab" data-tab="ledger">Ledger</div>
-    <div class="rail-footer">Fernweh Labs Ltd<br>Demo workspace · mock data</div>
+    <div class="rail-footer">Fintech Beta Labs Ltd<br>Demo workspace · mock data</div>
   </div>
 
   <div class="main">
@@ -412,7 +418,6 @@ function dialSVG(pct, teamId){
       stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${offset}"
       transform="rotate(-90 65 65)"/>
     <g opacity="0.5">${ticks}</g>
-    <circle cx="65" cy="65" r="4" fill="var(--brass)"/>
   </svg>`;
 }
 
