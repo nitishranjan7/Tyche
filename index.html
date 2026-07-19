@@ -533,6 +533,19 @@
   </div>
 </div>
 
+<!-- Modal: adjust cap -->
+<div class="overlay" id="overlayAdjustCap">
+  <div class="modal">
+    <h3>Adjust budget cap</h3>
+    <p class="modal-sub" id="adjustCapSub"></p>
+    <div class="field"><label>New budget cap</label><input id="adjustCapInput" type="number" placeholder="5000"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayAdjustCap')">Cancel</button>
+      <button class="btn primary" onclick="saveCap()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const TODAY = new Date(2026,6,19);
 
@@ -592,6 +605,7 @@ let state = {
   nextTxId: 5,
   nextApprovalId: 102,
   transferTargetTeam: null,
+  adjustCapTarget: null,
   currentView: "admin"
 };
 
@@ -745,11 +759,18 @@ function renderTeams(){
 
 function adjustCap(teamId){
   const team = state.teams.find(t=>t.id===teamId);
-  const val = prompt(`New budget cap for ${team.name} (current: ${fmt(team.cap)})`, team.cap);
-  if(val===null) return;
-  const num = parseFloat(val);
+  state.adjustCapTarget = teamId;
+  document.getElementById('adjustCapSub').textContent = `${team.name} · current cap ${fmt(team.cap)}`;
+  document.getElementById('adjustCapInput').value = team.cap;
+  openModal('overlayAdjustCap');
+}
+
+function saveCap(){
+  const team = state.teams.find(t=>t.id===state.adjustCapTarget);
+  const num = parseFloat(document.getElementById('adjustCapInput').value);
   if(isNaN(num) || num<=0){ alert('Enter a valid amount.'); return; }
   team.cap = num;
+  closeModal('overlayAdjustCap');
   renderAll();
 }
 
