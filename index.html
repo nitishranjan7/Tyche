@@ -267,6 +267,8 @@
   .stat-callout .figure{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;}
   .stat-callout .label{font-size:13px;color:var(--text-dim);}
 
+  .currency-note{font-size:11px;color:var(--text-dim);margin-top:14px;}
+
   /* ---- Expenses ---- */
   .row .exp-date{width:56px;flex-shrink:0;color:var(--text-dim);}
   .row .exp-card{width:150px;flex-shrink:0;color:var(--text-dim);}
@@ -802,6 +804,7 @@ function renderDashboard(){
           <span><span class="dot" style="background:var(--brass)"></span>Allocated to teams</span>
           <span><span class="dot" style="background:var(--paper-dim)"></span>Unallocated reserve</span>
         </div>
+        <div class="currency-note">Tyche is single-currency by design — built for lean teams who don't need multi-entity FX complexity yet.</div>
       </div>`;
 
     const pending = state.approvals.filter(a=>a.status==='pending').length;
