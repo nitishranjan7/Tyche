@@ -271,6 +271,21 @@
   .row .card-status{width:90px;flex-shrink:0;text-align:right;}
   .row .card-expiry{width:60px;flex-shrink:0;text-align:right;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;}
 
+  /* ---- Analytics ---- */
+  .analytics-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+  .seg-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .seg-btn{font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;padding:8px 14px;border:none;background:var(--ink-2);color:var(--text-dim);cursor:pointer;}
+  .seg-btn+.seg-btn{border-left:1px solid var(--line);}
+  .seg-btn.active{background:var(--brass);color:#1B1508;}
+  .date-range-select{font-family:'Inter',sans-serif;font-size:12.5px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--ink-2);color:var(--text-light);cursor:pointer;}
+  .chart-card{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:24px 20px 16px;}
+  .chart-wrap{display:flex;align-items:flex-end;gap:10px;}
+  .chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;}
+  .bar-track{height:170px;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;}
+  .chart-bar{width:70%;max-width:34px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--brass-bright),var(--brass));}
+  .chart-bar-value{font-size:10px;color:var(--text-dim);margin-bottom:4px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+  .chart-bar-label{margin-top:8px;font-size:10.5px;color:var(--text-dim);text-align:center;line-height:1.3;}
+
   .ledger-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .chip{
     font-size:12px;padding:6px 13px;border-radius:20px;border:1px solid var(--line);
@@ -324,6 +339,7 @@
     <div class="tab" data-tab="bills">Bills</div>
     <div class="tab" data-tab="vendors">Vendors</div>
     <div class="tab" data-tab="cards">Cards</div>
+    <div class="tab" data-tab="analytics">Analytics</div>
     <div class="rail-footer">Fintech Beta Labs Ltd<br>Demo workspace · mock data</div>
   </div>
 
@@ -415,6 +431,27 @@
       <div class="row-list" id="cardsList"></div>
     </div>
 
+    <!-- ANALYTICS -->
+    <div class="view" id="view-analytics">
+      <h1>Analytics</h1>
+      <p class="subhead">Spend by vendor and merchant over the last 12 months.</p>
+      <div class="analytics-toolbar">
+        <div class="seg-toggle" id="analyticsModeToggle">
+          <button class="seg-btn active" data-mode="vendor" onclick="setAnalyticsMode('vendor')">By vendor</button>
+          <button class="seg-btn" data-mode="month" onclick="setAnalyticsMode('month')">By month</button>
+        </div>
+        <select class="date-range-select" id="analyticsRange">
+          <option>Last 12 months</option>
+          <option>Last 6 months</option>
+          <option>Last 3 months</option>
+          <option>Year to date</option>
+        </select>
+      </div>
+      <div class="chart-card">
+        <div class="chart-wrap" id="analyticsChart"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -498,6 +535,7 @@ let state = {
     { id:2, nickname:"Engineering Cloud", type:"Company", holders:3, spend:9800, limit:10000, status:"Active", expiry:"03/28" },
     { id:3, nickname:"R. Osei — Marketing", type:"Employee", holders:1, spend:640, limit:2000, status:"Frozen", expiry:"11/26" },
   ],
+  analyticsMode: "vendor",
   ledgerFilter: "all",
   nextTeamId: 4,
   nextTxId: 5,
@@ -816,6 +854,48 @@ function renderCards(){
   }).join('');
 }
 
+const ANALYTICS_MONTHS = ["Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul"];
+const ANALYTICS_VENDORS = [
+  { name:"AWS", base:3200, growth:180 },
+  { name:"Meta Ads Ltd", base:2600, growth:90 },
+  { name:"WeWork", base:980, growth:10 },
+  { name:"Datadog", base:1400, growth:140 },
+  { name:"Adobe", base:600, growth:15 },
+  { name:"Slack", base:340, growth:5 },
+];
+const analyticsMonthlySpend = (vendor, i) => Math.round(vendor.base + vendor.growth*i + Math.sin(i*1.3)*vendor.base*0.08);
+
+function setAnalyticsMode(mode){
+  state.analyticsMode = mode;
+  document.querySelectorAll('#analyticsModeToggle .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
+  renderAnalytics();
+}
+
+function renderAnalytics(){
+  let bars;
+  if(state.analyticsMode==='vendor'){
+    bars = ANALYTICS_VENDORS.map(v=>{
+      let total=0; for(let i=0;i<12;i++) total += analyticsMonthlySpend(v,i);
+      return { label:v.name, value:total };
+    }).sort((a,b)=>b.value-a.value);
+  } else {
+    bars = ANALYTICS_MONTHS.map((m,i)=>{
+      let total=0; ANALYTICS_VENDORS.forEach(v=>total += analyticsMonthlySpend(v,i));
+      return { label:m, value:total };
+    });
+  }
+  const max = Math.max(...bars.map(b=>b.value), 1);
+  document.getElementById('analyticsChart').innerHTML = bars.map(b=>`
+    <div class="chart-bar-col">
+      <div class="bar-track">
+        <div class="chart-bar-value">${fmt(b.value)}</div>
+        <div class="chart-bar" style="height:${Math.max((b.value/max)*85,4)}%"></div>
+      </div>
+      <div class="chart-bar-label">${b.label}</div>
+    </div>
+  `).join('');
+}
+
 function renderAll(){
   renderDashboard();
   renderTeams();
@@ -825,6 +905,7 @@ function renderAll(){
   renderBills();
   renderVendors();
   renderCards();
+  renderAnalytics();
 }
 renderAll();
 </script>
