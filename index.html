@@ -104,6 +104,8 @@
     padding:36px 44px 60px;
     max-width:1040px;
   }
+  .main-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:20px;}
+  .select-control{font-family:'Inter',sans-serif;font-size:12.5px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--ink-2);color:var(--text-light);cursor:pointer;}
   .view{display:none;}
   .view.active{display:block;animation:fade .25s ease;}
   @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
@@ -282,7 +284,6 @@
   .seg-btn{font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;padding:8px 14px;border:none;background:var(--ink-2);color:var(--text-dim);cursor:pointer;}
   .seg-btn+.seg-btn{border-left:1px solid var(--line);}
   .seg-btn.active{background:var(--brass);color:#1B1508;}
-  .date-range-select{font-family:'Inter',sans-serif;font-size:12.5px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--ink-2);color:var(--text-light);cursor:pointer;}
   .chart-card{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:24px 20px 16px;}
   .chart-wrap{display:flex;align-items:flex-end;gap:10px;}
   .chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;}
@@ -369,31 +370,18 @@
 
   <div class="main">
 
+    <div class="main-toolbar">
+      <select class="select-control" id="viewAsSelect" onchange="setCurrentView(this.value)"></select>
+    </div>
+
     <!-- DASHBOARD -->
     <div class="view active" id="view-dashboard">
       <h1>Dashboard</h1>
-      <p class="subhead">Only you can see the full company balance. Team leads only see their own budget.</p>
+      <p class="subhead" id="dashboardSubhead">Only you can see the full company balance. Team leads only see their own budget.</p>
 
-      <div class="pot-card">
-        <div class="pot-top">
-          <div>
-            <div class="pot-label">Total balance · owner view</div>
-            <div class="pot-figure mono" id="totalBalanceFig">$0</div>
-          </div>
-          <div class="pot-visible-note">🔒 Visible to root owner only</div>
-        </div>
-        <div class="split-bar" id="splitBar"></div>
-        <div class="split-legend">
-          <span><span class="dot" style="background:var(--brass)"></span>Allocated to teams</span>
-          <span><span class="dot" style="background:var(--paper-dim)"></span>Unallocated reserve</span>
-        </div>
-      </div>
+      <div id="dashboardTopCard"></div>
 
-      <div class="grid-3">
-        <div class="stat-card"><div class="k">Teams</div><div class="v" id="statTeams">0</div></div>
-        <div class="stat-card"><div class="k">Pending approvals</div><div class="v" id="statPending">0</div></div>
-        <div class="stat-card"><div class="k">Spent this month</div><div class="v mono" id="statSpent">$0</div></div>
-      </div>
+      <div class="grid-3" id="dashboardStats"></div>
     </div>
 
     <!-- TEAMS & BUDGETS -->
@@ -464,7 +452,7 @@
           <button class="seg-btn active" data-mode="vendor" onclick="setAnalyticsMode('vendor')">By vendor</button>
           <button class="seg-btn" data-mode="month" onclick="setAnalyticsMode('month')">By month</button>
         </div>
-        <select class="date-range-select" id="analyticsRange">
+        <select class="select-control" id="analyticsRange">
           <option>Last 12 months</option>
           <option>Last 6 months</option>
           <option>Last 3 months</option>
@@ -564,7 +552,8 @@ let state = {
   nextTeamId: 4,
   nextTxId: 5,
   nextApprovalId: 102,
-  transferTargetTeam: null
+  transferTargetTeam: null,
+  currentView: "admin"
 };
 
 const fmt = n => '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
@@ -580,6 +569,8 @@ function closeModal(id){ document.getElementById(id).classList.remove('active');
 
 const usageColor = pct => pct >= 90 ? 'var(--rust)' : pct >= 70 ? 'var(--brass)' : 'var(--sage)';
 const teamName = id => (state.teams.find(t=>t.id===id) || {}).name || '—';
+const isAdmin = () => state.currentView === 'admin';
+const currentTeamId = () => isAdmin() ? null : state.currentView;
 
 function teamSpent(teamId){
   const txSum = state.transactions.filter(t=>t.teamId===teamId && t.status==='approved').reduce((s,t)=>s+t.amount,0);
@@ -610,30 +601,11 @@ function dialSVG(pct, teamId){
   </svg>`;
 }
 
-function renderDashboard(){
-  document.getElementById('totalBalanceFig').textContent = fmt(state.totalBalance);
-  const allocated = state.teams.reduce((s,t)=>s+t.cap,0);
-  const unallocated = Math.max(state.totalBalance - allocated, 0);
-  const allocPct = Math.min((allocated/state.totalBalance)*100,100);
-  document.getElementById('splitBar').innerHTML =
-    `<div class="seg" style="width:${allocPct}%;background:var(--brass)"></div>
-     <div class="seg" style="width:${100-allocPct}%;background:var(--paper-dim)"></div>`;
-
-  document.getElementById('statTeams').textContent = state.teams.length;
-  document.getElementById('statPending').textContent = state.approvals.filter(a=>a.status==='pending').length;
-  const spentThisMonth = state.transactions.filter(t=>t.status==='approved').reduce((s,t)=>s+t.amount,0);
-  document.getElementById('statSpent').textContent = fmt(spentThisMonth);
-
-  document.getElementById('thresholdNote').textContent = fmt(state.threshold);
-}
-
-function renderTeams(){
-  const grid = document.getElementById('teamsGrid');
-  grid.innerHTML = state.teams.map(t=>{
-    const spent = teamSpent(t.id);
-    const pct = Math.round((spent/t.cap)*100);
-    const remaining = Math.max(t.cap - spent,0);
-    return `
+function teamCardHTML(t){
+  const spent = teamSpent(t.id);
+  const pct = Math.round((spent/t.cap)*100);
+  const remaining = Math.max(t.cap - spent,0);
+  return `
     <div class="team-card">
       <div class="team-name">${t.name}</div>
       <div class="team-members">${t.members.join(', ')}</div>
@@ -649,7 +621,83 @@ function renderTeams(){
         <button class="btn primary" onclick="adjustCap(${t.id})">Adjust cap</button>
       </div>
     </div>`;
-  }).join('') + `<div class="add-team-card" onclick="openModal('overlayNewTeam')">+ Create a team</div>`;
+}
+
+function dashboardTeamCardHTML(t){
+  const spent = teamSpent(t.id);
+  const pct = Math.round((spent/t.cap)*100);
+  const remaining = Math.max(t.cap - spent,0);
+  return `
+    <div class="pot-card" style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;">
+      <div class="dial-wrap" style="margin:0;flex-shrink:0;">
+        ${dialSVG(pct, t.id)}
+        <div class="dial-center">
+          <div class="dial-remaining mono">${fmt(remaining)}</div>
+          <div class="dial-of">left of ${fmt(t.cap)}</div>
+        </div>
+      </div>
+      <div>
+        <div class="pot-label">${t.name} budget · team lead view</div>
+        <div class="pot-figure mono" style="font-size:22px;">${fmt(spent)} spent</div>
+      </div>
+    </div>`;
+}
+
+function renderDashboard(){
+  const top = document.getElementById('dashboardTopCard');
+  const stats = document.getElementById('dashboardStats');
+  const subhead = document.getElementById('dashboardSubhead');
+
+  if(isAdmin()){
+    subhead.textContent = 'Only you can see the full company balance. Team leads only see their own budget.';
+
+    const allocated = state.teams.reduce((s,t)=>s+t.cap,0);
+    const allocPct = Math.min((allocated/state.totalBalance)*100,100);
+    top.innerHTML = `
+      <div class="pot-card">
+        <div class="pot-top">
+          <div>
+            <div class="pot-label">Total balance · owner view</div>
+            <div class="pot-figure mono">${fmt(state.totalBalance)}</div>
+          </div>
+          <div class="pot-visible-note">🔒 Visible to root owner only</div>
+        </div>
+        <div class="split-bar">
+          <div class="seg" style="width:${allocPct}%;background:var(--brass)"></div>
+          <div class="seg" style="width:${100-allocPct}%;background:var(--paper-dim)"></div>
+        </div>
+        <div class="split-legend">
+          <span><span class="dot" style="background:var(--brass)"></span>Allocated to teams</span>
+          <span><span class="dot" style="background:var(--paper-dim)"></span>Unallocated reserve</span>
+        </div>
+      </div>`;
+
+    const pending = state.approvals.filter(a=>a.status==='pending').length;
+    const spentThisMonth = state.transactions.filter(t=>t.status==='approved').reduce((s,t)=>s+t.amount,0);
+    stats.style.gridTemplateColumns = 'repeat(3,1fr)';
+    stats.innerHTML = `
+      <div class="stat-card"><div class="k">Teams</div><div class="v">${state.teams.length}</div></div>
+      <div class="stat-card"><div class="k">Pending approvals</div><div class="v">${pending}</div></div>
+      <div class="stat-card"><div class="k">Spent this month</div><div class="v mono">${fmt(spentThisMonth)}</div></div>`;
+  } else {
+    const team = state.teams.find(t=>t.id===currentTeamId());
+    subhead.textContent = `Viewing as the ${team.name} lead — only ${team.name}'s budget is visible.`;
+    top.innerHTML = dashboardTeamCardHTML(team);
+
+    const pending = state.approvals.filter(a=>a.teamId===team.id && a.status==='pending').length;
+    stats.style.gridTemplateColumns = 'repeat(2,1fr)';
+    stats.innerHTML = `
+      <div class="stat-card"><div class="k">Pending approvals</div><div class="v">${pending}</div></div>
+      <div class="stat-card"><div class="k">Spent this month</div><div class="v mono">${fmt(teamSpent(team.id))}</div></div>`;
+  }
+}
+
+function renderTeams(){
+  document.getElementById('thresholdNote').textContent = fmt(state.threshold);
+  const grid = document.getElementById('teamsGrid');
+  const teams = isAdmin() ? state.teams : state.teams.filter(t=>t.id===currentTeamId());
+  grid.innerHTML = teams.map(teamCardHTML).join('') +
+    (isAdmin() ? `<div class="add-team-card" onclick="openModal('overlayNewTeam')">+ Create a team</div>` : '');
 }
 
 function adjustCap(teamId){
@@ -711,25 +759,28 @@ function createTeam(){
 }
 
 function renderApprovals(){
-  const pending = state.approvals.filter(a=>a.status==='pending');
+  const scoped = isAdmin() ? state.approvals : state.approvals.filter(a=>a.teamId===currentTeamId());
+  const pending = scoped.filter(a=>a.status==='pending');
   document.getElementById('approvalBadge').textContent = pending.length || '';
   document.getElementById('approvalBadge').style.display = pending.length ? 'inline-block' : 'none';
 
   const list = document.getElementById('approvalsList');
-  if(state.approvals.length===0){
+  if(scoped.length===0){
     list.innerHTML = `<div class="empty-state">No approval requests yet.</div>`;
     return;
   }
-  list.innerHTML = state.approvals.slice().reverse().map(a=>`
+  list.innerHTML = scoped.slice().reverse().map(a=>`
     <div class="row">
       <div class="r-team">${a.teamName}</div>
       <div class="r-desc">${a.desc}</div>
       <div class="r-amt">${fmt(a.amount)}</div>
       <div class="r-status">
-        ${a.status==='pending' ? `
-          <button class="btn small" style="margin-right:6px" onclick="decideApproval(${a.id}, true)">Approve</button>
-          <button class="btn small danger" onclick="decideApproval(${a.id}, false)">Reject</button>
-        ` : `<span class="pill ${a.status}">${a.status}</span>`}
+        ${a.status==='pending'
+          ? (isAdmin()
+            ? `<button class="btn small" style="margin-right:6px" onclick="decideApproval(${a.id}, true)">Approve</button>
+               <button class="btn small danger" onclick="decideApproval(${a.id}, false)">Reject</button>`
+            : `<span class="pill pending">Pending</span>`)
+          : `<span class="pill ${a.status}">${a.status}</span>`}
       </div>
     </div>
   `).join('');
@@ -746,11 +797,18 @@ function decideApproval(id, approve){
 
 function renderLedger(){
   const filters = document.getElementById('ledgerFilters');
-  const names = ['all', ...state.teams.map(t=>t.name)];
-  filters.innerHTML = names.map(n=>`<button class="chip ${state.ledgerFilter===n?'active':''}" onclick="setLedgerFilter('${n}')">${n==='all'?'All teams':n}</button>`).join('');
+  if(isAdmin()){
+    filters.style.display = '';
+    const names = ['all', ...state.teams.map(t=>t.name)];
+    filters.innerHTML = names.map(n=>`<button class="chip ${state.ledgerFilter===n?'active':''}" onclick="setLedgerFilter('${n}')">${n==='all'?'All teams':n}</button>`).join('');
+  } else {
+    filters.style.display = 'none';
+  }
 
   const list = document.getElementById('ledgerList');
-  const rows = state.transactions.filter(t=> state.ledgerFilter==='all' || t.teamName===state.ledgerFilter);
+  const rows = isAdmin()
+    ? state.transactions.filter(t=> state.ledgerFilter==='all' || t.teamName===state.ledgerFilter)
+    : state.transactions.filter(t=> t.teamId===currentTeamId());
   if(rows.length===0){
     list.innerHTML = `<div class="empty-state">No transactions for this filter.</div>`;
     return;
@@ -768,12 +826,13 @@ function renderLedger(){
 function setLedgerFilter(name){ state.ledgerFilter = name; renderLedger(); }
 
 function renderExpenses(){
-  const total = state.expenses.length;
-  const submitted = state.expenses.filter(e=>e.status!=='Incomplete').length;
+  const data = isAdmin() ? state.expenses : state.expenses.filter(e=>e.teamId===currentTeamId());
+  const total = data.length;
+  const submitted = data.filter(e=>e.status!=='Incomplete').length;
   document.getElementById('expSubmissionRate').textContent = total ? Math.round((submitted/total)*100)+'%' : '0%';
 
   const list = document.getElementById('expensesList');
-  list.innerHTML = state.expenses.map(e=>`
+  list.innerHTML = data.map(e=>`
     <div class="row">
       <div class="exp-date">${e.date}</div>
       <div class="exp-card">${e.card}</div>
@@ -799,9 +858,9 @@ function billBucket(b){
   return null;
 }
 
-function renderBillsSummary(){
+function renderBillsSummary(bills){
   const buckets = { overdue:{total:0,count:0}, thisMonth:{total:0,count:0}, nextMonth:{total:0,count:0} };
-  state.bills.forEach(b=>{
+  bills.forEach(b=>{
     const k = billBucket(b);
     if(k){ buckets[k].total += b.amount; buckets[k].count++; }
   });
@@ -816,7 +875,8 @@ function renderBillsSummary(){
 }
 
 function renderBills(){
-  renderBillsSummary();
+  const scoped = isAdmin() ? state.bills : state.bills.filter(b=>b.teamId===currentTeamId());
+  renderBillsSummary(scoped);
 
   const names = ['All', ...BILL_STATUSES];
   document.getElementById('billFilters').innerHTML = names.map(n=>
@@ -824,7 +884,7 @@ function renderBills(){
   ).join('');
 
   const list = document.getElementById('billsList');
-  const rows = state.bills.filter(b=> state.billFilter==='All' || b.status===state.billFilter);
+  const rows = scoped.filter(b=> state.billFilter==='All' || b.status===state.billFilter);
   if(rows.length===0){
     list.innerHTML = `<div class="empty-state">No bills for this filter.</div>`;
     return;
@@ -855,12 +915,12 @@ function renderVendors(){
   `).join('');
 }
 
-function renderCardsSummary(){
-  const total = state.cards.reduce((s,c)=>s+c.spend,0);
-  const company = state.cards.filter(c=>c.type==='Company').reduce((s,c)=>s+c.spend,0);
-  const employee = state.cards.filter(c=>c.type==='Employee').reduce((s,c)=>s+c.spend,0);
-  const cards = [['Total spend',total],['Company cards',company],['Employee cards',employee]];
-  document.getElementById('cardsSummary').innerHTML = cards.map(([label,val])=>`
+function renderCardsSummary(cards){
+  const total = cards.reduce((s,c)=>s+c.spend,0);
+  const company = cards.filter(c=>c.type==='Company').reduce((s,c)=>s+c.spend,0);
+  const employee = cards.filter(c=>c.type==='Employee').reduce((s,c)=>s+c.spend,0);
+  const rows = [['Total spend',total],['Company cards',company],['Employee cards',employee]];
+  document.getElementById('cardsSummary').innerHTML = rows.map(([label,val])=>`
     <div class="stat-card">
       <div class="k">${label}</div>
       <div class="v mono">${fmt(val)}</div>
@@ -869,9 +929,10 @@ function renderCardsSummary(){
 }
 
 function renderCards(){
-  renderCardsSummary();
+  const scoped = isAdmin() ? state.cards : state.cards.filter(c=>c.teamId===currentTeamId());
+  renderCardsSummary(scoped);
   const list = document.getElementById('cardsList');
-  list.innerHTML = state.cards.map(c=>{
+  list.innerHTML = scoped.map(c=>{
     const pct = Math.min(Math.round((c.spend/c.limit)*100),100);
     return `
     <div class="row">
@@ -930,7 +991,33 @@ function renderAnalytics(){
   `).join('');
 }
 
+function applyRoleVisibility(){
+  const admin = isAdmin();
+  document.querySelector('.tab[data-tab="vendors"]').style.display = admin ? '' : 'none';
+  document.querySelector('.tab[data-tab="analytics"]').style.display = admin ? '' : 'none';
+  if(!admin){
+    const activeTab = document.querySelector('.tab.active')?.dataset.tab;
+    if(activeTab==='vendors' || activeTab==='analytics') switchTab('dashboard');
+  }
+}
+
+function renderViewAsOptions(){
+  const sel = document.getElementById('viewAsSelect');
+  sel.innerHTML = ['<option value="admin">Admin</option>']
+    .concat(state.teams.map(t=>`<option value="${t.id}">${t.name} Lead</option>`))
+    .join('');
+  sel.value = String(state.currentView);
+}
+
+function setCurrentView(value){
+  state.currentView = value === 'admin' ? 'admin' : Number(value);
+  applyRoleVisibility();
+  renderAll();
+}
+
 function renderAll(){
+  renderViewAsOptions();
+  applyRoleVisibility();
   renderDashboard();
   renderTeams();
   renderApprovals();
