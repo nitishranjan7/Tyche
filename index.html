@@ -250,7 +250,14 @@
   .row .bill-status{width:150px;flex-shrink:0;text-align:right;}
   .pill.for-submission{background:var(--ink-3);color:var(--text-dim);}
   .pill.for-approval,.pill.for-payment{background:rgba(201,154,63,.18);color:var(--brass-text);}
-  .pill.sent-for-payment,.pill.paid{background:rgba(125,160,138,.18);color:var(--sage-text);}
+  .pill.sent-for-payment,.pill.paid,.pill.active{background:rgba(125,160,138,.18);color:var(--sage-text);}
+  .pill.draft{background:var(--ink-3);color:var(--text-dim);}
+
+  /* ---- Vendors ---- */
+  .row .vendor-name{width:160px;flex-shrink:0;font-weight:600;}
+  .row .vendor-owner{width:150px;flex-shrink:0;color:var(--text-dim);}
+  .row .vendor-payment{flex:1;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  .row .vendor-status{width:100px;flex-shrink:0;text-align:right;}
 
   .ledger-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .chip{
@@ -303,6 +310,7 @@
     <div class="tab" data-tab="ledger">Ledger</div>
     <div class="tab" data-tab="expenses">Expenses</div>
     <div class="tab" data-tab="bills">Bills</div>
+    <div class="tab" data-tab="vendors">Vendors</div>
     <div class="rail-footer">Fintech Beta Labs Ltd<br>Demo workspace · mock data</div>
   </div>
 
@@ -379,6 +387,13 @@
       <div class="row-list" id="billsList"></div>
     </div>
 
+    <!-- VENDORS -->
+    <div class="view" id="view-vendors">
+      <h1>Vendors</h1>
+      <p class="subhead">Every vendor on file, with their payout details on record.</p>
+      <div class="row-list" id="vendorsList"></div>
+    </div>
+
   </div>
 </div>
 
@@ -451,6 +466,12 @@ let state = {
     { id:8, vendor:"Figma", desc:"Design seats", invoice:"INV-6674", amount:300, dueDate:"2026-08-01", status:"For payment", method:"Card" },
   ],
   billFilter: "All",
+  vendors: [
+    { id:1, name:"Adobe Inc.", owner:"R. Osei", payment:"Chase Business •••• 7734", status:"Active" },
+    { id:2, name:"WeWork Companies", owner:"J. Marsh", payment:"HSBC UK •••• 2291", status:"Active" },
+    { id:3, name:"Notion Labs", owner:"T. Idowu", payment:"Mercury •••• 5560", status:"Draft" },
+    { id:4, name:"Figma Inc.", owner:"L. Park", payment:"Wells Fargo •••• 1188", status:"Active" },
+  ],
   ledgerFilter: "all",
   nextTeamId: 4,
   nextTxId: 5,
@@ -723,6 +744,18 @@ function renderBills(){
 
 function setBillFilter(name){ state.billFilter = name; renderBills(); }
 
+function renderVendors(){
+  const list = document.getElementById('vendorsList');
+  list.innerHTML = state.vendors.map(v=>`
+    <div class="row">
+      <div class="vendor-name">${v.name}</div>
+      <div class="vendor-owner">${v.owner}</div>
+      <div class="vendor-payment">${v.payment}</div>
+      <div class="vendor-status"><span class="pill ${v.status.toLowerCase()}">${v.status}</span></div>
+    </div>
+  `).join('');
+}
+
 function renderAll(){
   renderDashboard();
   renderTeams();
@@ -730,6 +763,7 @@ function renderAll(){
   renderLedger();
   renderExpenses();
   renderBills();
+  renderVendors();
 }
 renderAll();
 </script>
