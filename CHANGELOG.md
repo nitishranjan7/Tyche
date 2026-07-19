@@ -22,6 +22,10 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `9b36252` — Add configurable approval threshold via settings modal — revert to `8c6804e`
+  Admin-only gear icon next to "View as" opens a modal to edit
+  `state.threshold`; saving re-renders the Teams & Budgets subhead and the
+  transfer modal's over-threshold warning.
 - `0f97523` — Add role-based view selector with real data restrictions — revert to `f6a6418`
   Top-right "View as" dropdown (Admin + dynamic per-team entries) that filters
   Dashboard/Teams & Budgets/Approvals/Ledger/Expenses/Bills/Cards to the
