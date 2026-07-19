@@ -22,6 +22,10 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `ceddcfd` — Add wheel logomark to sidebar brand header — revert to `88aba46`
+  Adds the gradient wheel SVG mark to the left of "Tyche" in the sidebar brand
+  row; `.brand` switched to flex layout to lay the mark and text out inline.
+- `88aba46` — Add CHANGELOG with rollback reference for recent commits — revert to `85502f9`
 - `85502f9` — Wire Teams & Budgets into Expenses, Bills, and Cards — revert to `dd1487f`
   Tags each expense/bill/card with a `teamId`; team "spent" in Teams & Budgets is
   now computed from transactions + expenses + bills (sent-for-payment/paid) +
