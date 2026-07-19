@@ -22,6 +22,12 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `5b404be` — Add mark-as-paid to Bills and card issuance to Cards — revert to `cdb3dd9`
+  Bills gets a "Mark as paid" button (advances one pipeline step per click,
+  available to both roles). Cards gets a "+ Add card" tile/modal (nickname,
+  type, limit, team; defaults $0 spend/Active), Admin-only since its team
+  dropdown would otherwise let a team lead assign a card to a team they
+  can't see.
 - `ebc7212` — Add spend-by-team analytics mode — revert to `3b91fff`
   Third "By team" Analytics toggle, one bar per team. `teamSpent()` gained an
   optional `since` param (defaults to `state.periodStart`) so this mode can
