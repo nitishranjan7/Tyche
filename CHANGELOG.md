@@ -22,6 +22,11 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `82db120` — Fix brand wordmark spacing and remove split color styling — revert to `127dd04`
+  "Ty" and `<span>che</span>` were separate flex items under `.brand`'s
+  `display:flex; gap:8px`, so the 8px gap rendered as a visible split in the
+  middle of the word. Merged into a single `<span>Tyche</span>` flex item and
+  dropped the brass color override so the whole wordmark uses `--text-light`.
 - `ceddcfd` — Add wheel logomark to sidebar brand header — revert to `88aba46`
   Adds the gradient wheel SVG mark to the left of "Tyche" in the sidebar brand
   row; `.brand` switched to flex layout to lay the mark and text out inline.
