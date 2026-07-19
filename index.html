@@ -259,6 +259,18 @@
   .row .vendor-payment{flex:1;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;}
   .row .vendor-status{width:100px;flex-shrink:0;text-align:right;}
 
+  /* ---- Cards ---- */
+  .pill.frozen{background:var(--ink-3);color:var(--text-dim);}
+  .row .card-name{width:160px;flex-shrink:0;font-weight:600;}
+  .row .card-holders{width:100px;flex-shrink:0;color:var(--text-dim);}
+  .row .card-usage{flex:1;padding-right:10px;}
+  .row .card-usage .mini-bar{height:6px;border-radius:4px;background:var(--paper-dim);overflow:hidden;margin-bottom:5px;}
+  .row .card-usage .mini-bar .fill{height:100%;}
+  .row .card-usage .amt{font-size:11.5px;color:var(--text-dim);}
+  .row .card-usage .amt b{color:var(--text-light);font-weight:600;}
+  .row .card-status{width:90px;flex-shrink:0;text-align:right;}
+  .row .card-expiry{width:60px;flex-shrink:0;text-align:right;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;}
+
   .ledger-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .chip{
     font-size:12px;padding:6px 13px;border-radius:20px;border:1px solid var(--line);
@@ -311,6 +323,7 @@
     <div class="tab" data-tab="expenses">Expenses</div>
     <div class="tab" data-tab="bills">Bills</div>
     <div class="tab" data-tab="vendors">Vendors</div>
+    <div class="tab" data-tab="cards">Cards</div>
     <div class="rail-footer">Fintech Beta Labs Ltd<br>Demo workspace · mock data</div>
   </div>
 
@@ -394,6 +407,14 @@
       <div class="row-list" id="vendorsList"></div>
     </div>
 
+    <!-- CARDS -->
+    <div class="view" id="view-cards">
+      <h1>Cards</h1>
+      <p class="subhead">Company and employee cards, with monthly spend against each limit.</p>
+      <div class="grid-3" id="cardsSummary"></div>
+      <div class="row-list" id="cardsList"></div>
+    </div>
+
   </div>
 </div>
 
@@ -472,6 +493,11 @@ let state = {
     { id:3, name:"Notion Labs", owner:"T. Idowu", payment:"Mercury •••• 5560", status:"Draft" },
     { id:4, name:"Figma Inc.", owner:"L. Park", payment:"Wells Fargo •••• 1188", status:"Active" },
   ],
+  cards: [
+    { id:1, nickname:"Ops Travel", type:"Company", holders:4, spend:5200, limit:6000, status:"Active", expiry:"09/27" },
+    { id:2, nickname:"Engineering Cloud", type:"Company", holders:3, spend:9800, limit:10000, status:"Active", expiry:"03/28" },
+    { id:3, nickname:"R. Osei — Marketing", type:"Employee", holders:1, spend:640, limit:2000, status:"Frozen", expiry:"11/26" },
+  ],
   ledgerFilter: "all",
   nextTeamId: 4,
   nextTxId: 5,
@@ -490,11 +516,13 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>swi
 function openModal(id){ document.getElementById(id).classList.add('active'); }
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
 
+const usageColor = pct => pct >= 90 ? 'var(--rust)' : pct >= 70 ? 'var(--brass)' : 'var(--sage)';
+
 function dialSVG(pct, teamId){
   const r = 52, c = 2*Math.PI*r;
   const capped = Math.min(pct,100);
   const offset = c - (capped/100)*c;
-  const color = pct >= 90 ? 'var(--rust)' : pct >= 70 ? 'var(--brass)' : 'var(--sage)';
+  const color = usageColor(pct);
   let ticks = '';
   for(let i=0;i<24;i++){
     const angle = (i/24)*360;
@@ -756,6 +784,38 @@ function renderVendors(){
   `).join('');
 }
 
+function renderCardsSummary(){
+  const total = state.cards.reduce((s,c)=>s+c.spend,0);
+  const company = state.cards.filter(c=>c.type==='Company').reduce((s,c)=>s+c.spend,0);
+  const employee = state.cards.filter(c=>c.type==='Employee').reduce((s,c)=>s+c.spend,0);
+  const cards = [['Total spend',total],['Company cards',company],['Employee cards',employee]];
+  document.getElementById('cardsSummary').innerHTML = cards.map(([label,val])=>`
+    <div class="stat-card">
+      <div class="k">${label}</div>
+      <div class="v mono">${fmt(val)}</div>
+    </div>
+  `).join('');
+}
+
+function renderCards(){
+  renderCardsSummary();
+  const list = document.getElementById('cardsList');
+  list.innerHTML = state.cards.map(c=>{
+    const pct = Math.min(Math.round((c.spend/c.limit)*100),100);
+    return `
+    <div class="row">
+      <div class="card-name">${c.nickname}</div>
+      <div class="card-holders">${c.holders} cardholder${c.holders===1?'':'s'}</div>
+      <div class="card-usage">
+        <div class="mini-bar"><div class="fill" style="width:${pct}%;background:${usageColor(pct)}"></div></div>
+        <div class="amt"><b>${fmt(c.spend)}</b> / ${fmt(c.limit)} this month</div>
+      </div>
+      <div class="card-status"><span class="pill ${c.status.toLowerCase()}">${c.status}</span></div>
+      <div class="card-expiry">${c.expiry}</div>
+    </div>`;
+  }).join('');
+}
+
 function renderAll(){
   renderDashboard();
   renderTeams();
@@ -764,6 +824,7 @@ function renderAll(){
   renderExpenses();
   renderBills();
   renderVendors();
+  renderCards();
 }
 renderAll();
 </script>
