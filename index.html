@@ -106,6 +106,14 @@
   }
   .main-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:20px;}
   .select-control{font-family:'Inter',sans-serif;font-size:12.5px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--ink-2);color:var(--text-light);cursor:pointer;}
+  .icon-btn{
+    width:36px;height:36px;flex-shrink:0;
+    border-radius:8px;border:1px solid var(--line);background:var(--ink-2);
+    color:var(--text-dim);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .icon-btn:hover{background:var(--ink-3);border-color:var(--brass);}
   .view{display:none;}
   .view.active{display:block;animation:fade .25s ease;}
   @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
@@ -371,6 +379,7 @@
   <div class="main">
 
     <div class="main-toolbar">
+      <button class="icon-btn" id="settingsBtn" onclick="openSettings()" title="Settings">⚙</button>
       <select class="select-control" id="viewAsSelect" onchange="setCurrentView(this.value)"></select>
     </div>
 
@@ -478,6 +487,19 @@
     <div class="modal-btns">
       <button class="btn" onclick="closeModal('overlayNewTeam')">Cancel</button>
       <button class="btn primary" onclick="createTeam()">Create team</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: settings -->
+<div class="overlay" id="overlaySettings">
+  <div class="modal">
+    <h3>Settings</h3>
+    <p class="modal-sub">Controls that apply company-wide.</p>
+    <div class="field"><label>Auto-approve threshold</label><input id="settingsThreshold" type="number" placeholder="2000"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlaySettings')">Cancel</button>
+      <button class="btn primary" onclick="saveSettings()">Save</button>
     </div>
   </div>
 </div>
@@ -991,10 +1013,24 @@ function renderAnalytics(){
   `).join('');
 }
 
+function openSettings(){
+  document.getElementById('settingsThreshold').value = state.threshold;
+  openModal('overlaySettings');
+}
+
+function saveSettings(){
+  const val = parseFloat(document.getElementById('settingsThreshold').value);
+  if(isNaN(val) || val<=0){ alert('Enter a valid threshold amount.'); return; }
+  state.threshold = val;
+  closeModal('overlaySettings');
+  renderAll();
+}
+
 function applyRoleVisibility(){
   const admin = isAdmin();
   document.querySelector('.tab[data-tab="vendors"]').style.display = admin ? '' : 'none';
   document.querySelector('.tab[data-tab="analytics"]').style.display = admin ? '' : 'none';
+  document.getElementById('settingsBtn').style.display = admin ? '' : 'none';
   if(!admin){
     const activeTab = document.querySelector('.tab.active')?.dataset.tab;
     if(activeTab==='vendors' || activeTab==='analytics') switchTab('dashboard');
