@@ -50,6 +50,9 @@
     flex-direction:column;
   }
   .brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
     padding:0 20px 24px;
     font-family:'Fraunces',serif;
     font-size:20px;
@@ -333,7 +336,27 @@
 
 <div class="app">
   <div class="rail">
-    <div class="brand">Ty<span>che</span></div>
+    <div class="brand">
+      <svg width="22" height="22" viewBox="0 0 130 130" style="flex-shrink:0">
+        <defs>
+          <linearGradient id="wheelGrad" x1="15%" y1="90%" x2="85%" y2="10%">
+            <stop offset="0%" style="stop-color:var(--rust)"/>
+            <stop offset="55%" style="stop-color:var(--brass)"/>
+            <stop offset="100%" style="stop-color:var(--brass-bright)"/>
+          </linearGradient>
+        </defs>
+        <g transform="translate(65,65)" fill="none" stroke="url(#wheelGrad)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 0,-15 A 34,34 0 0 1 26,-42" transform="rotate(0)"/>
+          <path d="M 0,-15 A 34,34 0 0 1 26,-42" transform="rotate(60)"/>
+          <path d="M 0,-15 A 34,34 0 0 1 26,-42" transform="rotate(120)"/>
+          <path d="M 0,-15 A 34,34 0 0 1 26,-42" transform="rotate(180)"/>
+          <path d="M 0,-15 A 34,34 0 0 1 26,-42" transform="rotate(240)"/>
+          <path d="M 0,-15 A 34,34 0 0 1 26,-42" transform="rotate(300)"/>
+        </g>
+        <circle cx="65" cy="65" r="12.75" fill="url(#wheelGrad)"/>
+      </svg>
+      Ty<span>che</span>
+    </div>
     <div class="tab active" data-tab="dashboard">Dashboard</div>
     <div class="tab" data-tab="teams">Teams & Budgets</div>
     <div class="tab" data-tab="approvals">Approvals <span class="badge" id="approvalBadge"></span></div>
