@@ -22,6 +22,11 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `187803d` — Add budget period tracking with manual period reset — revert to `1fb7d62`
+  `state.periodStart` (defaults to the 1st of the month) now gates
+  `teamSpent()`'s transaction/expense/bill sums; card spend is unfiltered
+  since it has no date field. Admin-only "Start new period" button near the
+  Teams & Budgets header resets it to today; "Resets monthly" shown per dial.
 - `9b36252` — Add configurable approval threshold via settings modal — revert to `8c6804e`
   Admin-only gear icon next to "View as" opens a modal to edit
   `state.threshold`; saving re-renders the Teams & Budgets subhead and the
