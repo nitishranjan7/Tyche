@@ -22,6 +22,12 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `0ec33db` — Add CSV export to Ledger and Bills — revert to `2cf7ca5`
+  Admin-only "Export CSV" button in the header row of each view. Builds the
+  CSV client-side from the currently visible (filtered/searched) rows via a
+  Blob and a temporary `<a>` — no server round-trip. Refactored the row
+  filtering in `renderLedger`/`renderBills` into shared `ledgerRows()` /
+  `billRows()` helpers so the export and the on-screen list can't drift.
 - `3fea232` — Add search to Ledger, Expenses, Bills, and Vendors — revert to `df4fbca`
   Each view gets a pill-shaped search input (styled like the existing filter
   chips) that does a case-insensitive substring match against the view's
