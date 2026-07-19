@@ -22,6 +22,13 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `3fea232` — Add search to Ledger, Expenses, Bills, and Vendors — revert to `df4fbca`
+  Each view gets a pill-shaped search input (styled like the existing filter
+  chips) that does a case-insensitive substring match against the view's
+  most relevant text field(s) — Ledger: recipient/description, Expenses:
+  merchant, Bills: vendor/description/invoice, Vendors: name/owner. Search
+  combines with team scope and status chips rather than replacing them;
+  added `state.search` and a shared `setSearch(key, value)` dispatcher.
 - `4124f6a` — Complete vendor-bill linkage for all vendors — revert to `8d361f7`
   Added Datadog, AWS, Google, LinkedIn, and Slack to `state.vendors` (owner
   names drawn from existing team members, invented payment details matching
