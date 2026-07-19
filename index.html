@@ -98,6 +98,8 @@
     color:var(--text-dim);
     line-height:1.5;
   }
+  .rail-link{font-size:11px;color:var(--text-dim);text-decoration:underline;cursor:pointer;}
+  .rail-link:hover{color:var(--brass-text);}
 
   /* ---- Main ---- */
   .main{
@@ -464,7 +466,13 @@
     <div class="tab" data-tab="vendors">Vendors</div>
     <div class="tab" data-tab="cards">Cards</div>
     <div class="tab" data-tab="analytics">Analytics</div>
-    <div class="rail-footer">Fintech Beta Labs Ltd<br>Demo workspace · mock data</div>
+    <div class="rail-footer">
+      Fintech Beta Labs Ltd<br>Demo workspace · mock data
+      <div style="margin-top:10px;">
+        <a href="#" class="rail-link" id="emptyStateLink" onclick="startEmptyState();return false;">View empty state</a>
+        <a href="#" class="rail-link" id="restoreDataLink" onclick="restoreDemoData();return false;" style="display:none;">Restore demo data</a>
+      </div>
+    </div>
   </div>
 
   <div class="main">
@@ -679,7 +687,7 @@
 <script>
 const TODAY = new Date(2026,6,19);
 
-let state = {
+function initialState(){ return {
   totalBalance: 184320,
   threshold: 2000,
   periodStart: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1),
@@ -743,8 +751,11 @@ let state = {
   nextCardId: 4,
   transferTargetTeam: null,
   adjustCapTarget: null,
-  currentView: "admin"
-};
+  currentView: "admin",
+  emptyMode: false
+}; }
+
+let state = initialState();
 
 const fmt = n => '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
 const fmtDate = iso => new Date(iso+'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
@@ -845,6 +856,25 @@ function renderDashboard(){
   if(isAdmin()){
     subhead.textContent = 'Only Admin can see the full company balance. Team leads only see their own budget.';
 
+    if(state.teams.length===0){
+      top.innerHTML = `
+        <div class="pot-card">
+          <div class="pot-top">
+            <div>
+              <div class="pot-label">Total balance · admin view</div>
+              <div class="pot-figure mono">$0</div>
+            </div>
+          </div>
+          <div class="empty-state" style="padding:20px 0 0;">Create your first team to get started.</div>
+        </div>`;
+      stats.style.gridTemplateColumns = 'repeat(3,1fr)';
+      stats.innerHTML = `
+        <div class="stat-card"><div class="k">Teams</div><div class="v">0</div></div>
+        <div class="stat-card"><div class="k">Pending approvals</div><div class="v">0</div></div>
+        <div class="stat-card"><div class="k">Spent this month</div><div class="v mono">$0</div></div>`;
+      return;
+    }
+
     const allocated = state.teams.reduce((s,t)=>s+t.cap,0);
     const allocPct = Math.min((allocated/state.totalBalance)*100,100);
     top.innerHTML = `
@@ -891,7 +921,10 @@ function renderTeams(){
   document.getElementById('thresholdNote').textContent = fmt(state.threshold);
   const grid = document.getElementById('teamsGrid');
   const teams = isAdmin() ? state.teams : state.teams.filter(t=>t.id===currentTeamId());
-  grid.innerHTML = teams.map(teamCardHTML).join('') +
+  const emptyNote = (isAdmin() && teams.length===0)
+    ? `<div class="empty-state" style="grid-column:1/-1;">No teams yet. Create your first team to start tracking budgets.</div>`
+    : '';
+  grid.innerHTML = emptyNote + teams.map(teamCardHTML).join('') +
     (isAdmin() ? `<div class="add-team-card" onclick="openModal('overlayNewTeam')">+ Create a team</div>` : '');
 }
 
@@ -1011,7 +1044,9 @@ function renderLedger(){
   const rows = ledgerRows();
   const q = state.search.ledger.trim().toLowerCase();
   if(rows.length===0){
-    list.innerHTML = `<div class="empty-state">${q ? 'No transactions match your search.' : 'No transactions for this filter.'}</div>`;
+    const msg = q ? 'No transactions match your search.'
+      : (state.ledgerFilter!=='all' ? 'No transactions for this filter.' : 'No transactions yet.');
+    list.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
   list.innerHTML = rows.map(t=>`
@@ -1133,7 +1168,9 @@ function renderBills(){
   const rows = billRows(scoped);
   const q = state.search.bills.trim().toLowerCase();
   if(rows.length===0){
-    list.innerHTML = `<div class="empty-state">${q ? 'No bills match your search.' : 'No bills for this filter.'}</div>`;
+    const msg = q ? 'No bills match your search.'
+      : (state.billFilter!=='All' ? 'No bills for this filter.' : 'No bills yet.');
+    list.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
   list.innerHTML = rows.map(b=>`
@@ -1180,7 +1217,7 @@ function renderVendors(){
   const q = state.search.vendors.trim().toLowerCase();
   const data = q ? state.vendors.filter(v=> v.name.toLowerCase().includes(q) || v.owner.toLowerCase().includes(q)) : state.vendors;
   if(data.length===0){
-    list.innerHTML = `<div class="empty-state">No vendors match your search.</div>`;
+    list.innerHTML = `<div class="empty-state">${q ? 'No vendors match your search.' : 'No vendors on file yet.'}</div>`;
     return;
   }
   list.innerHTML = data.map(v=>{
@@ -1223,6 +1260,10 @@ function renderCards(){
   const scoped = isAdmin() ? state.cards : state.cards.filter(c=>c.teamId===currentTeamId());
   renderCardsSummary(scoped);
   const list = document.getElementById('cardsList');
+  if(scoped.length===0){
+    list.innerHTML = `<div class="empty-state">${isAdmin() ? 'No cards yet. Add one to get started.' : 'No cards issued to your team yet.'}</div>`;
+    return;
+  }
   list.innerHTML = scoped.map(c=>{
     const pct = Math.min(Math.round((c.spend/c.limit)*100),100);
     return `
@@ -1362,9 +1403,37 @@ function setCurrentView(value){
   renderAll();
 }
 
+function startEmptyState(){
+  state.teams = [];
+  state.transactions = [];
+  state.approvals = [];
+  state.expenses = [];
+  state.bills = [];
+  state.vendors = [];
+  state.cards = [];
+  state.totalBalance = 0;
+  state.currentView = 'admin';
+  state.ledgerFilter = 'all';
+  state.billFilter = 'All';
+  state.search = { ledger:"", expenses:"", bills:"", vendors:"" };
+  state.emptyMode = true;
+  renderAll();
+}
+
+function restoreDemoData(){
+  state = initialState();
+  renderAll();
+}
+
+function updateEmptyModeLinks(){
+  document.getElementById('emptyStateLink').style.display = state.emptyMode ? 'none' : '';
+  document.getElementById('restoreDataLink').style.display = state.emptyMode ? '' : 'none';
+}
+
 function renderAll(){
   renderViewAsOptions();
   applyRoleVisibility();
+  updateEmptyModeLinks();
   renderDashboard();
   renderTeams();
   renderApprovals();
