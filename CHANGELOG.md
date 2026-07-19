@@ -22,6 +22,17 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `d335776` — Add first-run empty state and demo data reset — revert to `5f556fd`
+  Small "View empty state" / "Restore demo data" links at the bottom of the
+  sidebar. The former clears `teams`/`transactions`/`approvals`/`expenses`/
+  `bills`/`vendors`/`cards` and zeroes `totalBalance`; the latter reloads a
+  fresh copy of the seed data. Refactored the initial `state` object literal
+  into an `initialState()` factory so restore can reconstruct it exactly
+  (including `Date` fields, which a JSON round-trip would have broken).
+  Added friendly `.empty-state` messages to Teams & Budgets and Cards
+  (previously had none), a dedicated $0 empty Dashboard prompt, and made
+  the existing Ledger/Bills/Vendors empty messages distinguish "no data at
+  all" from "no filter/search match."
 - `693d988` — Fix dense list layouts for mobile — revert to `a24d015`
   Also added the missing `<meta name="viewport">` tag — without it mobile
   browsers render at a virtual ~980px viewport and the existing 760px
