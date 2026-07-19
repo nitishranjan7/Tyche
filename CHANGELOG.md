@@ -22,6 +22,9 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `2d56237` — Replace native prompt with styled modal for budget cap adjustment — revert to `ec9c53f`
+  `adjustCap()` no longer uses `prompt()`; opens a modal pre-filled with the
+  team's current cap instead, matching the existing overlay/field pattern.
 - `187803d` — Add budget period tracking with manual period reset — revert to `1fb7d62`
   `state.periodStart` (defaults to the 1st of the month) now gates
   `teamSpent()`'s transaction/expense/bill sums; card spend is unfiltered
