@@ -22,6 +22,22 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `d9389f7` — Switch accent theme from gold/brass to blue — revert to `cab371e`
+  `--brass`/`--brass-bright`/`--brass-text` swapped from warm gold to
+  steel blue (`#3E6FA6`/`#5B8FC7`/`#2C527D`); `--sage`/`--rust` and their
+  `-text` variants left untouched per the request, so success/danger
+  states stay visually distinct from the new primary. Logomark `#wheelGrad`
+  stops hardcoded to the same three hex values (previously `var(--rust)`
+  at 0%, now no rust reference in the gradient at all). Everything wired
+  through `var(--brass*)` — active tab border, primary buttons, active
+  chip/seg-toggle, the dial's 70-89% "on track" tier, chart bar gradient —
+  cascaded automatically, verified in-browser. Left as-is, flagged
+  separately: a few hardcoded `rgba(201,154,63,...)` pill/tag backgrounds
+  (`.pill.pending`, `.pill.for-approval`, `.pill.for-payment`,
+  `.type-tag.transfer`, `.modal-note`) still render the old gold tint
+  since they don't reference the variable, while their text color does —
+  out of this commit's literal scope, not touched.
+
 - `55389a9` — Merge Bill Payments and Bills into one tab with two internal views — revert to `73bbbd3`
   Removed the separate "Bill Payments" sidebar tab/view. The Bills tab
   now has an internal `.seg-toggle` (reusing the Analytics pattern) with
