@@ -22,6 +22,16 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `835a03a` — Add summary stats and budget comparison to Analytics — revert to `a750bed`
+  Four-card `.grid-4` summary above the chart (Total spend for the current
+  mode, Vs. last month, Top vendor, Top team) plus a data-driven insight
+  sentence ("Spend is up/down X%, driven by [vendor]") — the driver is
+  whichever vendor had the largest month-over-month delta, not just the
+  12-month leader. "By team" mode now renders two adjacent bars per team
+  (muted cap vs colored actual spend, scaled to a shared max so an
+  overspending team's bar visibly exceeds its own cap bar) instead of a
+  single total-spend bar, with a small legend shown only in that mode.
+
 - `55e66a4` — Add login gate with demo credentials — revert to `07e1837`
   Full-screen `.overlay`/`.modal` (reusing the post-redesign styling)
   active by default, gating the app behind `test-user` / `password123`.
