@@ -22,6 +22,23 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `f11e7d2` — Add team-initiated vendor creation with CFO/Admin approval — revert to `c285389`
+  "+ Add vendor" tile (reusing `.add-card-tile`) on the Bills view,
+  universally visible so team leads can reach it without needing the
+  Admin/CFO-only Vendors tab. The modal's "Submitting team" select is
+  pre-filled and locked to the current team lead's team; Admin/CFO get an
+  open dropdown across all teams (including sub-teams). New vendors land
+  with `status:"Pending approval"` and a linked `state.approvals` entry
+  (`type:"vendor"`, `vendorId`). `state.approvals` entries now carry a
+  `type` (`"transfer"` for existing/new transfer requests, `"vendor"` for
+  these) rendered as a small colored tag on each Approvals row; vendor
+  rows show "—" instead of a dollar amount. `decideApproval()` now
+  branches on `type` — vendor approvals flip the linked vendor to
+  "Active" (or "Rejected", kept visible for audit rather than deleted)
+  instead of creating a transaction. An approved vendor is a plain
+  `state.vendors` entry with no special flags, so it's immediately usable
+  anywhere an existing Active vendor would be.
+
 - `47459d8` — Restructure sidebar with dedicated Payments section — revert to `6894496`
   Regrouped into Overview / Payments / Budgets / Spend / Payments Admin /
   Insights. Added three placeholder views (Card Payments, Bank Transfers,
