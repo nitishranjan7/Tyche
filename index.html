@@ -170,6 +170,7 @@
   .split-legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
 
   .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:8px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
   .stat-card{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:18px 20px;}
   .stat-card .k{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
   .stat-card .v{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;}
@@ -334,6 +335,15 @@
   .chart-bar-value{font-size:10px;color:var(--text-dim);margin-bottom:4px;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
   .chart-bar-label{margin-top:8px;font-size:10.5px;color:var(--text-dim);text-align:center;line-height:1.3;}
 
+  .analytics-insight{
+    font-size:13px;color:var(--text-light);background:var(--ink-2);
+    border:1px solid var(--line);border-left:3px solid var(--brass);
+    border-radius:6px;padding:12px 16px;margin-bottom:20px;
+  }
+  .team-bars{display:flex;align-items:flex-end;justify-content:center;gap:5px;height:100%;width:100%;}
+  .team-bars .chart-bar{width:16px;max-width:none;}
+  .team-bars .cap-bar{background:var(--ink-3);border:1px solid var(--line);}
+
   .ledger-filters{display:flex;gap:8px;flex-wrap:wrap;}
   .chip{
     font-size:12px;padding:6px 13px;border-radius:20px;border:1px solid var(--line);
@@ -421,6 +431,7 @@
     .tab.active{border-left:none;border-bottom:3px solid var(--brass);}
     .main{padding:24px 18px 40px;}
     .grid-3{grid-template-columns:1fr;}
+    .grid-4{grid-template-columns:1fr;}
 
     #view-expenses .row, #view-bills .row, #view-cards .row, #view-vendors .row{
       flex-direction:column;
@@ -619,6 +630,12 @@
           <option>Last 3 months</option>
           <option>Year to date</option>
         </select>
+      </div>
+      <div class="grid-4" id="analyticsSummary"></div>
+      <div class="analytics-insight" id="analyticsInsight"></div>
+      <div class="split-legend" id="teamModeLegend" style="display:none;margin-bottom:12px;">
+        <span><span class="dot" style="background:var(--ink-3);border:1px solid var(--line);"></span>Budget cap</span>
+        <span><span class="dot" style="background:var(--brass)"></span>Actual spend</span>
       </div>
       <div class="chart-card">
         <div class="chart-wrap" id="analyticsChart"></div>
@@ -1360,32 +1377,110 @@ function setAnalyticsMode(mode){
   renderAnalytics();
 }
 
+function analyticsMonthlyTotals(){
+  return ANALYTICS_MONTHS.map((m,i)=>{
+    let total=0; ANALYTICS_VENDORS.forEach(v=>total += analyticsMonthlySpend(v,i));
+    return total;
+  });
+}
+function analyticsVendorTotals(){
+  return ANALYTICS_VENDORS.map(v=>{
+    let total=0; for(let i=0;i<12;i++) total += analyticsMonthlySpend(v,i);
+    return { name:v.name, value:total };
+  });
+}
+function analyticsTeamTotals(){
+  return state.teams.map(t=>({ name:t.name, value:teamSpent(t.id, new Date(0)), cap:t.cap }));
+}
+
 function renderAnalytics(){
-  let bars;
-  if(state.analyticsMode==='vendor'){
-    bars = ANALYTICS_VENDORS.map(v=>{
-      let total=0; for(let i=0;i<12;i++) total += analyticsMonthlySpend(v,i);
-      return { label:v.name, value:total };
-    }).sort((a,b)=>b.value-a.value);
-  } else if(state.analyticsMode==='month'){
-    bars = ANALYTICS_MONTHS.map((m,i)=>{
-      let total=0; ANALYTICS_VENDORS.forEach(v=>total += analyticsMonthlySpend(v,i));
-      return { label:m, value:total };
-    });
+  const chart = document.getElementById('analyticsChart');
+  const legend = document.getElementById('teamModeLegend');
+
+  if(state.analyticsMode==='team'){
+    legend.style.display = 'flex';
+    const teams = analyticsTeamTotals();
+    if(teams.length===0){
+      chart.innerHTML = `<div class="empty-state">No teams yet.</div>`;
+    } else {
+      const maxScale = Math.max(...teams.map(t=>Math.max(t.cap,t.value)), 1);
+      chart.innerHTML = teams.map(t=>{
+        const capH = Math.max((t.cap/maxScale)*85, 2);
+        const spendH = Math.max((t.value/maxScale)*85, 2);
+        const pct = t.cap ? Math.round((t.value/t.cap)*100) : 0;
+        return `
+        <div class="chart-bar-col">
+          <div class="bar-track">
+            <div class="chart-bar-value">${fmt(t.value)} / ${fmt(t.cap)}</div>
+            <div class="team-bars">
+              <div class="chart-bar cap-bar" style="height:${capH}%" title="Budget cap"></div>
+              <div class="chart-bar spend-bar" style="height:${spendH}%;background:${usageColor(pct)}" title="Actual spend"></div>
+            </div>
+          </div>
+          <div class="chart-bar-label">${t.name}</div>
+        </div>`;
+      }).join('');
+    }
   } else {
-    bars = state.teams.map(t=>({ label:t.name, value:teamSpent(t.id, new Date(0)) }))
-      .sort((a,b)=>b.value-a.value);
-  }
-  const max = Math.max(...bars.map(b=>b.value), 1);
-  document.getElementById('analyticsChart').innerHTML = bars.map(b=>`
-    <div class="chart-bar-col">
-      <div class="bar-track">
-        <div class="chart-bar-value">${fmt(b.value)}</div>
-        <div class="chart-bar" style="height:${Math.max((b.value/max)*85,4)}%"></div>
+    legend.style.display = 'none';
+    let bars;
+    if(state.analyticsMode==='vendor'){
+      bars = analyticsVendorTotals().map(v=>({label:v.name, value:v.value})).sort((a,b)=>b.value-a.value);
+    } else {
+      bars = ANALYTICS_MONTHS.map((m,i)=>({label:m, value:analyticsMonthlyTotals()[i]}));
+    }
+    const max = Math.max(...bars.map(b=>b.value), 1);
+    chart.innerHTML = bars.map(b=>`
+      <div class="chart-bar-col">
+        <div class="bar-track">
+          <div class="chart-bar-value">${fmt(b.value)}</div>
+          <div class="chart-bar" style="height:${Math.max((b.value/max)*85,4)}%"></div>
+        </div>
+        <div class="chart-bar-label">${b.label}</div>
       </div>
-      <div class="chart-bar-label">${b.label}</div>
-    </div>
-  `).join('');
+    `).join('');
+  }
+
+  renderAnalyticsSummary();
+}
+
+function renderAnalyticsSummary(){
+  const monthlyTotals = analyticsMonthlyTotals();
+  const lastMonth = monthlyTotals[monthlyTotals.length-1];
+  const priorMonth = monthlyTotals[monthlyTotals.length-2];
+  const vsLastMonthPct = priorMonth ? Math.round(((lastMonth-priorMonth)/priorMonth)*100) : 0;
+
+  const vendorTotals = analyticsVendorTotals();
+  const topVendor = vendorTotals.reduce((max,v)=> v.value>max.value?v:max, vendorTotals[0]);
+
+  const teamTotals = analyticsTeamTotals();
+  const topTeam = teamTotals.length ? teamTotals.reduce((max,t)=> t.value>max.value?t:max, teamTotals[0]) : null;
+
+  let totalSpend;
+  if(state.analyticsMode==='team'){
+    totalSpend = teamTotals.reduce((s,t)=>s+t.value,0);
+  } else if(state.analyticsMode==='vendor'){
+    totalSpend = vendorTotals.reduce((s,v)=>s+v.value,0);
+  } else {
+    totalSpend = monthlyTotals.reduce((s,v)=>s+v,0);
+  }
+
+  const changeColor = vsLastMonthPct>0 ? 'var(--rust-text)' : vsLastMonthPct<0 ? 'var(--sage-text)' : 'var(--text-light)';
+
+  document.getElementById('analyticsSummary').innerHTML = `
+    <div class="stat-card"><div class="k">Total spend</div><div class="v mono">${fmt(totalSpend)}</div></div>
+    <div class="stat-card"><div class="k">Vs. last month</div><div class="v mono" style="color:${changeColor}">${vsLastMonthPct>0?'+':''}${vsLastMonthPct}%</div></div>
+    <div class="stat-card"><div class="k">Top vendor</div><div class="v" style="font-size:16px;">${topVendor.name}</div><div class="sub mono">${fmt(topVendor.value)}</div></div>
+    <div class="stat-card"><div class="k">Top team</div><div class="v" style="font-size:16px;">${topTeam ? topTeam.name : '—'}</div><div class="sub mono">${topTeam ? fmt(topTeam.value) : '—'}</div></div>
+  `;
+
+  const drivers = ANALYTICS_VENDORS.map(v=>({ name:v.name, delta: analyticsMonthlySpend(v,11) - analyticsMonthlySpend(v,10) }));
+  const driver = vsLastMonthPct >= 0
+    ? drivers.reduce((m,d)=> d.delta>m.delta?d:m, drivers[0])
+    : drivers.reduce((m,d)=> d.delta<m.delta?d:m, drivers[0]);
+  const dir = vsLastMonthPct >= 0 ? 'up' : 'down';
+  document.getElementById('analyticsInsight').textContent =
+    `Spend is ${dir} ${Math.abs(vsLastMonthPct)}% vs last month, driven by ${driver.name}.`;
 }
 
 function openSettings(){
