@@ -189,6 +189,8 @@
     text-align:center;
   }
   .team-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;margin-bottom:2px;letter-spacing:-0.005em;}
+  .team-card.sub-team{border-left:3px solid var(--brass);background:var(--ink-3);margin-left:24px;}
+  .sub-team-tag{font-size:10.5px;color:var(--brass-text);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
   .team-members{font-size:11.5px;color:var(--text-dim);margin-bottom:14px;}
   .reset-note{font-size:10.5px;color:var(--text-dim);margin:-6px 0 10px;}
 
@@ -653,6 +655,7 @@
     <div class="field"><label>Team name</label><input id="newTeamName" placeholder="e.g. Design"></div>
     <div class="field"><label>Budget cap</label><input id="newTeamCap" type="number" placeholder="5000"></div>
     <div class="field"><label>Members (comma separated)</label><input id="newTeamMembers" placeholder="e.g. R. Osei, J. Marsh"></div>
+    <div class="field"><label>Parent team (optional)</label><select id="newTeamParent"></select></div>
     <div class="modal-btns">
       <button class="btn" onclick="closeModal('overlayNewTeam')">Cancel</button>
       <button class="btn primary" onclick="createTeam()">Create team</button>
@@ -745,9 +748,10 @@ function initialState(){ return {
   threshold: 2000,
   periodStart: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1),
   teams: [
-    { id:1, name:"Marketing", cap:12000, members:["A. Kade","R. Osei"] },
-    { id:2, name:"Engineering", cap:25000, members:["S. Vance","T. Idowu","L. Park"] },
-    { id:3, name:"Ops", cap:6000, members:["J. Marsh"] },
+    { id:1, name:"Marketing", cap:12000, members:["A. Kade","R. Osei"], parentTeamId:null },
+    { id:2, name:"Engineering", cap:25000, members:["S. Vance","T. Idowu","L. Park"], parentTeamId:null },
+    { id:3, name:"Ops", cap:6000, members:["J. Marsh"], parentTeamId:null },
+    { id:4, name:"Growth", cap:3000, members:["A. Kade"], parentTeamId:1 },
   ],
   transactions: [
     { id:1, teamId:1, teamName:"Marketing", desc:"Meta Ads Ltd", amount:2200, status:"approved", date:"Jul 14", dateISO:"2026-07-14" },
@@ -798,7 +802,7 @@ function initialState(){ return {
   analyticsMode: "vendor",
   ledgerFilter: "all",
   search: { ledger:"", expenses:"", bills:"", vendors:"" },
-  nextTeamId: 4,
+  nextTeamId: 5,
   nextTxId: 5,
   nextApprovalId: 102,
   nextCardId: 4,
@@ -862,8 +866,10 @@ function teamCardHTML(t){
   const spent = teamSpent(t.id);
   const pct = Math.round((spent/t.cap)*100);
   const remaining = Math.max(t.cap - spent,0);
+  const parent = t.parentTeamId ? state.teams.find(p=>p.id===t.parentTeamId) : null;
   return `
-    <div class="team-card">
+    <div class="team-card${parent ? ' sub-team' : ''}">
+      ${parent ? `<div class="sub-team-tag">↳ Sub-team of ${parent.name}</div>` : ''}
       <div class="team-name">${t.name}</div>
       <div class="team-members">${t.members.join(', ')}</div>
       <div class="dial-wrap">
@@ -971,6 +977,18 @@ function renderDashboard(){
   }
 }
 
+function orderedTeamsForDisplay(teams){
+  const topLevel = teams.filter(t => !t.parentTeamId);
+  const result = [];
+  topLevel.forEach(t=>{
+    result.push(t);
+    teams.filter(s => s.parentTeamId === t.id).forEach(s=>result.push(s));
+  });
+  const included = new Set(result.map(t=>t.id));
+  teams.forEach(t=>{ if(!included.has(t.id)) result.push(t); });
+  return result;
+}
+
 function renderTeams(){
   document.getElementById('thresholdNote').textContent = fmt(state.threshold);
   const grid = document.getElementById('teamsGrid');
@@ -978,8 +996,8 @@ function renderTeams(){
   const emptyNote = ((isAdmin() || isCFO()) && teams.length===0)
     ? `<div class="empty-state" style="grid-column:1/-1;">No teams yet. Create your first team to start tracking budgets.</div>`
     : '';
-  grid.innerHTML = emptyNote + teams.map(teamCardHTML).join('') +
-    ((isAdmin() || isCFO()) ? `<div class="add-team-card" onclick="openModal('overlayNewTeam')">+ Create a team</div>` : '');
+  grid.innerHTML = emptyNote + orderedTeamsForDisplay(teams).map(teamCardHTML).join('') +
+    ((isAdmin() || isCFO()) ? `<div class="add-team-card" onclick="openNewTeamModal()">+ Create a team</div>` : '');
 }
 
 function adjustCap(teamId){
@@ -1033,13 +1051,26 @@ function submitTransfer(){
   renderAll();
 }
 
+function openNewTeamModal(){
+  const sel = document.getElementById('newTeamParent');
+  const eligible = state.teams.filter(t => !t.parentTeamId);
+  sel.innerHTML = '<option value="">None — top-level team</option>' +
+    eligible.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('newTeamName').value = '';
+  document.getElementById('newTeamCap').value = '';
+  document.getElementById('newTeamMembers').value = '';
+  openModal('overlayNewTeam');
+}
+
 function createTeam(){
   const name = document.getElementById('newTeamName').value.trim();
   const cap = parseFloat(document.getElementById('newTeamCap').value);
   const membersRaw = document.getElementById('newTeamMembers').value.trim();
+  const parentRaw = document.getElementById('newTeamParent').value;
   if(!name || !cap || cap<=0){ alert('Enter a team name and a valid budget cap.'); return; }
   const members = membersRaw ? membersRaw.split(',').map(s=>s.trim()).filter(Boolean) : ['Unassigned'];
-  state.teams.push({ id: state.nextTeamId++, name, cap, members });
+  const parentTeamId = parentRaw ? Number(parentRaw) : null;
+  state.teams.push({ id: state.nextTeamId++, name, cap, members, parentTeamId });
   document.getElementById('newTeamName').value='';
   document.getElementById('newTeamCap').value='';
   document.getElementById('newTeamMembers').value='';
