@@ -22,6 +22,16 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `55e66a4` — Add login gate with demo credentials — revert to `07e1837`
+  Full-screen `.overlay`/`.modal` (reusing the post-redesign styling)
+  active by default, gating the app behind `test-user` / `password123`.
+  In-memory only — no localStorage/sessionStorage/cookies — so a real
+  refresh always shows it again. `body:not(.authenticated) .app{display:
+  none}` hides the app shell, and the bottom-of-script `renderAll()` call
+  was removed in favor of calling it only from `attemptLogin()` on
+  success, so nothing renders/initializes pre-login. Credentials shown
+  in plain muted text under the form since this is a public demo.
+
 - `3abd265` — Sharpen visual design — display type, contrast, corner radius — revert to `dff3b2b`
   Moved away from the generic templated look: imported Space Grotesk and
   swapped it in for `h1`/`.team-name`/`.modal h3` (Fraunces kept only for
