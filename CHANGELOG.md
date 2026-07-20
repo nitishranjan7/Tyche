@@ -22,6 +22,12 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `1eec1dc` — Increase Tyche wordmark size in sidebar — revert to `14d5e87`
+  `.brand` font-size 20px → 25px, so the "Tyche" text reads as a proper
+  wordmark next to the 22px logomark instead of an afterthought. Logomark
+  SVG dimensions untouched; `.brand` is already hidden at the 760px
+  breakpoint so no mobile impact.
+
 - `2e560bd` — Restyle the view-as selector to match the app's design language — revert to `a5a4ead`
   `.select-control` (the Admin/CFO/team-lead selector, and the Analytics
   range selector which shares the class) looked like a raw browser
