@@ -22,6 +22,13 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `755639b` — Use white text on solid blue buttons/chips for contrast — revert to `df0497c`
+  `.btn.primary`, `.chip.active`, `.seg-btn.active` all had text hardcoded
+  to `#1B1508` (a near-black tuned for the old gold background) — left
+  unreadable-ish dark-on-blue after the accent swap. Swapped all three to
+  `#FFFFFF`; searched the file for `1B1508` first and confirmed those were
+  the only three occurrences, so nothing else needed changing.
+
 - `d9389f7` — Switch accent theme from gold/brass to blue — revert to `cab371e`
   `--brass`/`--brass-bright`/`--brass-text` swapped from warm gold to
   steel blue (`#3E6FA6`/`#5B8FC7`/`#2C527D`); `--sage`/`--rust` and their
