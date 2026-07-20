@@ -22,6 +22,17 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `6a9ab3e` — Introduce CFO role distinct from Admin — revert to `47d8cd8`
+  Added "CFO" as a second `state.currentView` value (selector order: Admin,
+  CFO, then team leads) alongside a new `isCFO()` helper. Every place that
+  branched on `isAdmin()` for data/budget visibility (dashboard balance,
+  Teams & Budgets, Approvals, Ledger, Expenses, Bills, Cards, Vendors/
+  Analytics tab visibility, period controls, add-card tile, CSV export)
+  now checks `isAdmin() || isCFO()`. The settings gear and its threshold
+  modal stay gated on `isAdmin()` alone — CFO gets full financial
+  visibility but not account-level controls. Updated the two on-screen
+  strings that referenced "Admin only" to reflect the new parity.
+
 - `835a03a` — Add summary stats and budget comparison to Analytics — revert to `a750bed`
   Four-card `.grid-4` summary above the chart (Total spend for the current
   mode, Vs. last month, Top vendor, Top team) plus a data-driven insight
