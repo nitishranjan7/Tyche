@@ -22,6 +22,16 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `3abd265` — Sharpen visual design — display type, contrast, corner radius — revert to `dff3b2b`
+  Moved away from the generic templated look: imported Space Grotesk and
+  swapped it in for `h1`/`.team-name`/`.modal h3` (Fraunces kept only for
+  the sidebar wordmark). Pushed contrast — `--ink` to pure white, `--text-
+  light` to `#0F1216`, `--line` to `#D8D4CB`, `--ink-2` to a cooler `#F5F4F1`.
+  Reduced `border-radius` on cards/buttons/modals from 10-12px to 6px;
+  pills stay rounded at 14px, chips/search-input/badge untouched (already
+  deliberate pill shapes). Wheel logomark, brass/rust gradient, and budget
+  dial left exactly as they were.
+
 - `630a63e` — Reorganize sidebar into usage-based groups — revert to `8c36e80`
   Flat 9-tab list restructured into labeled groups (Overview, Spend,
   Payments, Insights) via a new `.rail-group-label` eyebrow-text class
