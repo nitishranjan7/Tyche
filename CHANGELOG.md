@@ -22,6 +22,13 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `8a6cad0` — Fix sidebar group label hierarchy — revert to `b26ae9a`
+  `.rail-group-label` was reading smaller and dimmer than the tab labels
+  beneath it — backwards for a section heading. Bumped to 11.5px/700-
+  weight `--text-light` (from 10.5px/600-weight `--text-dim`), so it now
+  reads clearly darker and bolder than the 13.5px/500-weight dim tabs
+  below it, even though it stays visually compact as an eyebrow label.
+
 - `f11e7d2` — Add team-initiated vendor creation with CFO/Admin approval — revert to `c285389`
   "+ Add vendor" tile (reusing `.add-card-tile`) on the Bills view,
   universally visible so team leads can reach it without needing the
