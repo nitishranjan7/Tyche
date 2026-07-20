@@ -22,6 +22,18 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `55389a9` — Merge Bill Payments and Bills into one tab with two internal views — revert to `73bbbd3`
+  Removed the separate "Bill Payments" sidebar tab/view. The Bills tab
+  now has an internal `.seg-toggle` (reusing the Analytics pattern) with
+  "All Bills" (the existing summary/filters/search/list, default active)
+  and "Payments" (the former Bill Payments placeholder, now cross-
+  referencing "All Bills" instead of "Bills"). New `.bills-subview`/
+  `.bills-subview.active` classes and a `setBillsSubview()` toggle mirror
+  the existing `.view`/`switchTab()` pattern but operate independently of
+  it, so switching sidebar tabs doesn't disturb which sub-view was last
+  selected. Role scoping, search, CSV export, and the "+ Add vendor" tile
+  all still live inside "All Bills" and are unaffected.
+
 - `1eec1dc` — Increase Tyche wordmark size in sidebar — revert to `14d5e87`
   `.brand` font-size 20px → 25px, so the "Tyche" text reads as a proper
   wordmark next to the 22px logomark instead of an afterthought. Logomark
