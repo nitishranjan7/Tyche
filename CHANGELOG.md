@@ -22,6 +22,19 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `47459d8` — Restructure sidebar with dedicated Payments section — revert to `6894496`
+  Regrouped into Overview / Payments / Budgets / Spend / Payments Admin /
+  Insights. Added three placeholder views (Card Payments, Bank Transfers,
+  Bill Payments) — header, subhead, `.empty-state` note, no logic yet.
+  The requested grouping omitted "Ledger" and "Bills" entirely even though
+  both are fully-built existing tabs; per user direction, Ledger landed in
+  Insights (next to Analytics) and Bills stayed in Payments (next to Bill
+  Payments, which explicitly references it). `applyRoleVisibility()` now
+  also hides the "Payments Admin" group label for team leads, since its
+  only child (Vendors) is already Admin/CFO-only and an orphaned label
+  would look broken; Card Payments/Bank Transfers/Bill Payments/Bills stay
+  visible to team leads, matching Bills' existing behavior.
+
 - `03a9f11` — Add one level of sub-teams to the data model and UI — revert to `54c2696`
   Teams gained an optional `parentTeamId` (null for top-level). The one-
   level cap is enforced at the data-entry point: `openNewTeamModal()`
