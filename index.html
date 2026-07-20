@@ -825,7 +825,8 @@ function closeModal(id){ document.getElementById(id).classList.remove('active');
 const usageColor = pct => pct >= 90 ? 'var(--rust)' : pct >= 70 ? 'var(--brass)' : 'var(--sage)';
 const teamName = id => (state.teams.find(t=>t.id===id) || {}).name || '—';
 const isAdmin = () => state.currentView === 'admin';
-const currentTeamId = () => isAdmin() ? null : state.currentView;
+const isCFO = () => state.currentView === 'cfo';
+const currentTeamId = () => (isAdmin() || isCFO()) ? null : state.currentView;
 
 function teamSpent(teamId, since = state.periodStart){
   const onOrAfter = iso => new Date(iso+'T00:00:00') >= since;
@@ -906,8 +907,8 @@ function renderDashboard(){
   const stats = document.getElementById('dashboardStats');
   const subhead = document.getElementById('dashboardSubhead');
 
-  if(isAdmin()){
-    subhead.textContent = 'Only Admin can see the full company balance. Team leads only see their own budget.';
+  if(isAdmin() || isCFO()){
+    subhead.textContent = 'Only Admin and CFO can see the full company balance. Team leads only see their own budget.';
 
     if(state.teams.length===0){
       top.innerHTML = `
@@ -937,7 +938,7 @@ function renderDashboard(){
             <div class="pot-label">Total balance · admin view</div>
             <div class="pot-figure mono">${fmt(state.totalBalance)}</div>
           </div>
-          <div class="pot-visible-note">🔒 Visible to Admin only</div>
+          <div class="pot-visible-note">🔒 Visible to Admin & CFO only</div>
         </div>
         <div class="split-bar">
           <div class="seg" style="width:${allocPct}%;background:var(--brass)"></div>
@@ -973,12 +974,12 @@ function renderDashboard(){
 function renderTeams(){
   document.getElementById('thresholdNote').textContent = fmt(state.threshold);
   const grid = document.getElementById('teamsGrid');
-  const teams = isAdmin() ? state.teams : state.teams.filter(t=>t.id===currentTeamId());
-  const emptyNote = (isAdmin() && teams.length===0)
+  const teams = (isAdmin() || isCFO()) ? state.teams : state.teams.filter(t=>t.id===currentTeamId());
+  const emptyNote = ((isAdmin() || isCFO()) && teams.length===0)
     ? `<div class="empty-state" style="grid-column:1/-1;">No teams yet. Create your first team to start tracking budgets.</div>`
     : '';
   grid.innerHTML = emptyNote + teams.map(teamCardHTML).join('') +
-    (isAdmin() ? `<div class="add-team-card" onclick="openModal('overlayNewTeam')">+ Create a team</div>` : '');
+    ((isAdmin() || isCFO()) ? `<div class="add-team-card" onclick="openModal('overlayNewTeam')">+ Create a team</div>` : '');
 }
 
 function adjustCap(teamId){
@@ -1047,7 +1048,7 @@ function createTeam(){
 }
 
 function renderApprovals(){
-  const scoped = isAdmin() ? state.approvals : state.approvals.filter(a=>a.teamId===currentTeamId());
+  const scoped = (isAdmin() || isCFO()) ? state.approvals : state.approvals.filter(a=>a.teamId===currentTeamId());
   const pending = scoped.filter(a=>a.status==='pending');
   document.getElementById('approvalBadge').textContent = pending.length || '';
   document.getElementById('approvalBadge').style.display = pending.length ? 'inline-block' : 'none';
@@ -1064,7 +1065,7 @@ function renderApprovals(){
       <div class="r-amt">${fmt(a.amount)}</div>
       <div class="r-status">
         ${a.status==='pending'
-          ? (isAdmin()
+          ? ((isAdmin() || isCFO())
             ? `<button class="btn small" style="margin-right:6px" onclick="decideApproval(${a.id}, true)">Approve</button>
                <button class="btn small danger" onclick="decideApproval(${a.id}, false)">Reject</button>`
             : `<span class="pill pending">Pending</span>`)
@@ -1085,7 +1086,7 @@ function decideApproval(id, approve){
 
 function renderLedger(){
   const filters = document.getElementById('ledgerFilters');
-  if(isAdmin()){
+  if(isAdmin() || isCFO()){
     filters.style.display = '';
     const names = ['all', ...state.teams.map(t=>t.name)];
     filters.innerHTML = names.map(n=>`<button class="chip ${state.ledgerFilter===n?'active':''}" onclick="setLedgerFilter('${n}')">${n==='all'?'All teams':n}</button>`).join('');
@@ -1115,7 +1116,7 @@ function renderLedger(){
 function setLedgerFilter(name){ state.ledgerFilter = name; renderLedger(); }
 
 function ledgerRows(){
-  let rows = isAdmin()
+  let rows = (isAdmin() || isCFO())
     ? state.transactions.filter(t=> state.ledgerFilter==='all' || t.teamName===state.ledgerFilter)
     : state.transactions.filter(t=> t.teamId===currentTeamId());
   const q = state.search.ledger.trim().toLowerCase();
@@ -1151,7 +1152,7 @@ function exportBillsCSV(){
 }
 
 function renderExpenses(){
-  let data = isAdmin() ? state.expenses : state.expenses.filter(e=>e.teamId===currentTeamId());
+  let data = (isAdmin() || isCFO()) ? state.expenses : state.expenses.filter(e=>e.teamId===currentTeamId());
   const q = state.search.expenses.trim().toLowerCase();
   if(q) data = data.filter(e=> e.merchant.toLowerCase().includes(q));
   const total = data.length;
@@ -1247,7 +1248,7 @@ function renderBills(){
 
 function setBillFilter(name){ state.billFilter = name; renderBills(); }
 
-function billsScoped(){ return isAdmin() ? state.bills : state.bills.filter(b=>b.teamId===currentTeamId()); }
+function billsScoped(){ return (isAdmin() || isCFO()) ? state.bills : state.bills.filter(b=>b.teamId===currentTeamId()); }
 
 function billRows(scoped){
   let rows = scoped.filter(b=> state.billFilter==='All' || b.status===state.billFilter);
@@ -1310,11 +1311,11 @@ function renderCardsSummary(cards){
 }
 
 function renderCards(){
-  const scoped = isAdmin() ? state.cards : state.cards.filter(c=>c.teamId===currentTeamId());
+  const scoped = (isAdmin() || isCFO()) ? state.cards : state.cards.filter(c=>c.teamId===currentTeamId());
   renderCardsSummary(scoped);
   const list = document.getElementById('cardsList');
   if(scoped.length===0){
-    list.innerHTML = `<div class="empty-state">${isAdmin() ? 'No cards yet. Add one to get started.' : 'No cards issued to your team yet.'}</div>`;
+    list.innerHTML = `<div class="empty-state">${(isAdmin() || isCFO()) ? 'No cards yet. Add one to get started.' : 'No cards issued to your team yet.'}</div>`;
     return;
   }
   list.innerHTML = scoped.map(c=>{
@@ -1507,14 +1508,15 @@ function startNewPeriod(){
 
 function applyRoleVisibility(){
   const admin = isAdmin();
-  document.querySelector('.tab[data-tab="vendors"]').style.display = admin ? '' : 'none';
-  document.querySelector('.tab[data-tab="analytics"]').style.display = admin ? '' : 'none';
+  const adminOrCFO = admin || isCFO();
+  document.querySelector('.tab[data-tab="vendors"]').style.display = adminOrCFO ? '' : 'none';
+  document.querySelector('.tab[data-tab="analytics"]').style.display = adminOrCFO ? '' : 'none';
   document.getElementById('settingsBtn').style.display = admin ? '' : 'none';
-  document.getElementById('periodControls').style.display = admin ? '' : 'none';
-  document.getElementById('addCardTile').style.display = admin ? '' : 'none';
-  document.getElementById('ledgerExportBtn').style.display = admin ? '' : 'none';
-  document.getElementById('billsExportBtn').style.display = admin ? '' : 'none';
-  if(!admin){
+  document.getElementById('periodControls').style.display = adminOrCFO ? '' : 'none';
+  document.getElementById('addCardTile').style.display = adminOrCFO ? '' : 'none';
+  document.getElementById('ledgerExportBtn').style.display = adminOrCFO ? '' : 'none';
+  document.getElementById('billsExportBtn').style.display = adminOrCFO ? '' : 'none';
+  if(!adminOrCFO){
     const activeTab = document.querySelector('.tab.active')?.dataset.tab;
     if(activeTab==='vendors' || activeTab==='analytics') switchTab('dashboard');
   }
@@ -1522,14 +1524,14 @@ function applyRoleVisibility(){
 
 function renderViewAsOptions(){
   const sel = document.getElementById('viewAsSelect');
-  sel.innerHTML = ['<option value="admin">Admin</option>']
+  sel.innerHTML = ['<option value="admin">Admin</option>', '<option value="cfo">CFO</option>']
     .concat(state.teams.map(t=>`<option value="${t.id}">${t.name} Lead</option>`))
     .join('');
   sel.value = String(state.currentView);
 }
 
 function setCurrentView(value){
-  state.currentView = value === 'admin' ? 'admin' : Number(value);
+  state.currentView = (value === 'admin' || value === 'cfo') ? value : Number(value);
   applyRoleVisibility();
   renderAll();
 }
