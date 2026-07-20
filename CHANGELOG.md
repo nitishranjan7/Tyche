@@ -22,6 +22,16 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `7d4c799` — Shift background palette from tan to neutral white/gray — revert to `030f30b`
+  `--ink-2`/`--ink-3`/`--paper`/`--paper-dim` all had a warm beige/tan cast
+  (B channel visibly lower than R/G). Replaced with genuinely neutral
+  grays where R≈G≈B (`#F7F7F6`, `#ECECEA`, `#EDEDEC`, `#E4E4E2`) — `--ink`
+  was already true white and untouched. Cooled `--ink-3` too even though
+  the request only named the other three, since it's the hover/active
+  surface sitting directly on `--ink-2` cards (tab active state, button
+  hovers, pill backgrounds, the budget dial ring) and leaving it warm
+  would have produced a visible tan flash on interaction.
+
 - `8a6cad0` — Fix sidebar group label hierarchy — revert to `b26ae9a`
   `.rail-group-label` was reading smaller and dimmer than the tab labels
   beneath it — backwards for a section heading. Bumped to 11.5px/700-
