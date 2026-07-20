@@ -22,6 +22,13 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `630a63e` — Reorganize sidebar into usage-based groups — revert to `8c36e80`
+  Flat 9-tab list restructured into labeled groups (Overview, Spend,
+  Payments, Insights) via a new `.rail-group-label` eyebrow-text class
+  matching the existing `.pot-label` pattern. Purely a markup/CSS
+  reordering — `applyRoleVisibility()` still targets tabs by `data-tab`
+  so Vendors/Analytics hiding for team leads needed no changes. Group
+  labels hidden at the 760px breakpoint, same as the brand/rail-footer.
 - `d335776` — Add first-run empty state and demo data reset — revert to `5f556fd`
   Small "View empty state" / "Restore demo data" links at the bottom of the
   sidebar. The former clears `teams`/`transactions`/`approvals`/`expenses`/
