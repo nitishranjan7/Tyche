@@ -488,18 +488,25 @@
     <div class="tab active" data-tab="dashboard">Dashboard</div>
     <div class="tab" data-tab="approvals">Approvals <span class="badge" id="approvalBadge"></span></div>
 
-    <div class="rail-group-label">Spend</div>
-    <div class="tab" data-tab="teams">Teams & Budgets</div>
-    <div class="tab" data-tab="cards">Cards</div>
-    <div class="tab" data-tab="expenses">Expenses</div>
-
     <div class="rail-group-label">Payments</div>
+    <div class="tab" data-tab="card-payments">Card Payments</div>
+    <div class="tab" data-tab="bank-transfers">Bank Transfers</div>
+    <div class="tab" data-tab="bill-payments">Bill Payments</div>
     <div class="tab" data-tab="bills">Bills</div>
+
+    <div class="rail-group-label">Budgets</div>
+    <div class="tab" data-tab="teams">Teams & Budgets</div>
+
+    <div class="rail-group-label">Spend</div>
+    <div class="tab" data-tab="expenses">Expenses</div>
+    <div class="tab" data-tab="cards">Cards</div>
+
+    <div class="rail-group-label" id="railGroupPaymentsAdmin">Payments Admin</div>
     <div class="tab" data-tab="vendors">Vendors</div>
-    <div class="tab" data-tab="ledger">Ledger</div>
 
     <div class="rail-group-label">Insights</div>
     <div class="tab" data-tab="analytics">Analytics</div>
+    <div class="tab" data-tab="ledger">Ledger</div>
     <div class="rail-footer">
       Fintech Beta Labs Ltd<br>Demo workspace · mock data
       <div style="margin-top:10px;">
@@ -595,6 +602,27 @@
         <input class="search-input" id="billsSearch" placeholder="Search vendor, description, or invoice…" oninput="setSearch('bills', this.value)">
       </div>
       <div class="row-list" id="billsList"></div>
+    </div>
+
+    <!-- CARD PAYMENTS -->
+    <div class="view" id="view-card-payments">
+      <h1>Card Payments</h1>
+      <p class="subhead">Company and employee card payment flows.</p>
+      <div class="row-list"><div class="empty-state">Detailed card payment flows land in the next phase.</div></div>
+    </div>
+
+    <!-- BANK TRANSFERS -->
+    <div class="view" id="view-bank-transfers">
+      <h1>Bank Transfers</h1>
+      <p class="subhead">Outbound wire and ACH transfers to vendors and recipients.</p>
+      <div class="row-list"><div class="empty-state">Detailed bank transfer flows land in the next phase.</div></div>
+    </div>
+
+    <!-- BILL PAYMENTS -->
+    <div class="view" id="view-bill-payments">
+      <h1>Bill Payments</h1>
+      <p class="subhead">Vendor invoice payments, from submission through settlement.</p>
+      <div class="row-list"><div class="empty-state">Detailed bill payment flows land in the next phase. See Bills for full invoice tracking.</div></div>
     </div>
 
     <!-- VENDORS -->
@@ -1542,6 +1570,7 @@ function applyRoleVisibility(){
   const adminOrCFO = admin || isCFO();
   document.querySelector('.tab[data-tab="vendors"]').style.display = adminOrCFO ? '' : 'none';
   document.querySelector('.tab[data-tab="analytics"]').style.display = adminOrCFO ? '' : 'none';
+  document.getElementById('railGroupPaymentsAdmin').style.display = adminOrCFO ? '' : 'none';
   document.getElementById('settingsBtn').style.display = admin ? '' : 'none';
   document.getElementById('periodControls').style.display = adminOrCFO ? '' : 'none';
   document.getElementById('addCardTile').style.display = adminOrCFO ? '' : 'none';
