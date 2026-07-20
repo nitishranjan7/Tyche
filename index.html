@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tyche — Teams & Budgets</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#FAF9F6;
-    --ink-2:#F4F3EF;
+    --ink:#FFFFFF;
+    --ink-2:#F5F4F1;
     --ink-3:#EAE8E1;
     --paper:#EDE7DA;
     --paper-dim:#E5E3DC;
@@ -18,8 +18,8 @@
     --sage:#7DA08A;
     --rust:#C1604A;
     --text-dim:#5F6B7A;
-    --text-light:#1B1F24;
-    --line:#E2E0D9;
+    --text-light:#0F1216;
+    --line:#D8D4CB;
     /* darker, text-safe tints of the accents above — used wherever brass/sage/rust
        need to render as small text on this light background, since the bright
        accent tones fall below readable contrast there */
@@ -117,10 +117,10 @@
     max-width:1040px;
   }
   .main-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:20px;}
-  .select-control{font-family:'Inter',sans-serif;font-size:12.5px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--ink-2);color:var(--text-light);cursor:pointer;}
+  .select-control{font-family:'Inter',sans-serif;font-size:12.5px;padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--ink-2);color:var(--text-light);cursor:pointer;}
   .icon-btn{
     width:36px;height:36px;flex-shrink:0;
-    border-radius:8px;border:1px solid var(--line);background:var(--ink-2);
+    border-radius:6px;border:1px solid var(--line);background:var(--ink-2);
     color:var(--text-dim);font-size:16px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
     transition:background .15s ease,border-color .15s ease;
@@ -131,11 +131,11 @@
   @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 
   h1{
-    font-family:'Fraunces',serif;
-    font-weight:500;
-    font-size:26px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:29px;
     margin:0 0 4px;
-    letter-spacing:.005em;
+    letter-spacing:-0.01em;
   }
   .subhead{
     color:var(--text-dim);
@@ -148,7 +148,7 @@
   .pot-card{
     background:var(--ink-2);
     border:1px solid var(--line);
-    border-radius:10px;
+    border-radius:6px;
     padding:26px 28px;
     margin-bottom:22px;
   }
@@ -170,7 +170,7 @@
   .split-legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
 
   .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:8px;}
-  .stat-card{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:18px 20px;}
+  .stat-card{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:18px 20px;}
   .stat-card .k{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
   .stat-card .v{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;}
   .stat-card .sub{font-size:11px;color:var(--text-dim);margin-top:4px;}
@@ -180,14 +180,14 @@
   .team-card{
     background:var(--ink-2);
     border:1px solid var(--line);
-    border-radius:10px;
+    border-radius:6px;
     padding:20px;
     display:flex;
     flex-direction:column;
     align-items:center;
     text-align:center;
   }
-  .team-name{font-family:'Fraunces',serif;font-weight:600;font-size:16.5px;margin-bottom:2px;}
+  .team-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;margin-bottom:2px;letter-spacing:-0.005em;}
   .team-members{font-size:11.5px;color:var(--text-dim);margin-bottom:14px;}
   .reset-note{font-size:10.5px;color:var(--text-dim);margin:-6px 0 10px;}
 
@@ -212,7 +212,7 @@
     font-size:12.5px;
     font-weight:600;
     padding:8px 12px;
-    border-radius:7px;
+    border-radius:6px;
     border:1px solid var(--line);
     background:transparent;
     color:var(--text-light);
@@ -228,7 +228,7 @@
 
   .add-team-card{
     border:1.5px dashed var(--line);
-    border-radius:10px;
+    border-radius:6px;
     display:flex;align-items:center;justify-content:center;
     color:var(--text-dim);
     font-size:13px;
@@ -239,7 +239,7 @@
   .add-team-card:hover{border-color:var(--brass);color:var(--brass-text);}
   .add-card-tile{
     border:1.5px dashed var(--line);
-    border-radius:10px;
+    border-radius:6px;
     display:flex;align-items:center;justify-content:center;
     color:var(--text-dim);
     font-size:13px;
@@ -251,7 +251,7 @@
   .add-card-tile:hover{border-color:var(--brass);color:var(--brass-text);}
 
   /* ---- Approvals & Ledger ---- */
-  .row-list{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .row-list{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
   .row{
     display:flex;align-items:center;gap:14px;
     padding:15px 20px;
@@ -264,7 +264,7 @@
   .row .r-amt{font-family:'IBM Plex Mono',monospace;font-weight:600;width:100px;text-align:right;flex-shrink:0;}
   .row .r-status{width:150px;flex-shrink:0;text-align:right;}
   .pill{
-    display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+    display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:14px;
   }
   .pill.pending{background:rgba(201,154,63,.18);color:var(--brass-text);}
   .pill.approved{background:rgba(125,160,138,.18);color:var(--sage-text);}
@@ -273,7 +273,7 @@
 
   /* ---- Stat callout (single big figure + caption) ---- */
   .stat-callout{
-    background:var(--ink-2);border:1px solid var(--line);border-radius:10px;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:6px;
     padding:18px 22px;margin-bottom:20px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
   }
   .stat-callout .figure{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;}
@@ -322,11 +322,11 @@
 
   /* ---- Analytics ---- */
   .analytics-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
-  .seg-toggle{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .seg-toggle{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;}
   .seg-btn{font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;padding:8px 14px;border:none;background:var(--ink-2);color:var(--text-dim);cursor:pointer;}
   .seg-btn+.seg-btn{border-left:1px solid var(--line);}
   .seg-btn.active{background:var(--brass);color:#1B1508;}
-  .chart-card{background:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:24px 20px 16px;}
+  .chart-card{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:24px 20px 16px;}
   .chart-wrap{display:flex;align-items:flex-end;gap:10px;}
   .chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;}
   .bar-track{height:170px;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;}
@@ -357,19 +357,19 @@
   }
   .overlay.active{display:flex;}
   .modal{
-    background:var(--ink-2);border:1px solid var(--line);border-radius:12px;
+    background:var(--ink-2);border:1px solid var(--line);border-radius:6px;
     width:380px;max-width:90vw;padding:26px;
   }
-  .modal h3{font-family:'Fraunces',serif;font-size:19px;margin:0 0 4px;font-weight:600;}
+  .modal h3{font-family:'Space Grotesk',sans-serif;font-size:19px;margin:0 0 4px;font-weight:700;letter-spacing:-0.005em;}
   .modal .modal-sub{font-size:12.5px;color:var(--text-dim);margin-bottom:18px;}
   .field{margin-bottom:14px;}
   .field label{display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
   .field input,.field select{
-    width:100%;padding:9px 11px;border-radius:7px;border:1px solid var(--line);
+    width:100%;padding:9px 11px;border-radius:6px;border:1px solid var(--line);
     background:var(--ink);color:var(--text-light);font-size:13.5px;font-family:'Inter',sans-serif;
   }
   .field input:focus,.field select:focus{outline:none;border-color:var(--brass);}
-  .modal-note{font-size:11.5px;color:var(--brass-text);background:rgba(201,154,63,.1);padding:8px 10px;border-radius:7px;margin-bottom:14px;display:none;}
+  .modal-note{font-size:11.5px;color:var(--brass-text);background:rgba(201,154,63,.1);padding:8px 10px;border-radius:6px;margin-bottom:14px;display:none;}
   .modal-btns{display:flex;gap:10px;margin-top:20px;}
 
   /* ---- Dense row stacking (Expenses/Bills/Cards/Vendors) ----
