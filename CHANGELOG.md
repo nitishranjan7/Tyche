@@ -22,6 +22,19 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `03a9f11` — Add one level of sub-teams to the data model and UI — revert to `54c2696`
+  Teams gained an optional `parentTeamId` (null for top-level). The one-
+  level cap is enforced at the data-entry point: `openNewTeamModal()`
+  populates the "Parent team" dropdown only with teams that don't already
+  have a parent themselves, so a sub-team can never be picked as a parent.
+  Teams & Budgets orders sub-teams directly after their parent via a new
+  `orderedTeamsForDisplay()` and tags each with a "↳ Sub-team of X" label
+  plus a brass left-border/indent treatment. Sub-teams are full `state.
+  teams` entries — Transfer, Adjust cap, the dial, and `teamSpent()` all
+  treat them exactly like top-level teams, with no rollup into the parent.
+  Seeded one demo sub-team ("Growth", under Marketing) so the nesting is
+  visible without manual setup.
+
 - `6a9ab3e` — Introduce CFO role distinct from Admin — revert to `47d8cd8`
   Added "CFO" as a second `state.currentView` value (selector order: Admin,
   CFO, then team leads) alongside a new `isCFO()` helper. Every place that
