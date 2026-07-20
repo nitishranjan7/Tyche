@@ -22,6 +22,16 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `2e560bd` — Restyle the view-as selector to match the app's design language — revert to `a5a4ead`
+  `.select-control` (the Admin/CFO/team-lead selector, and the Analytics
+  range selector which shares the class) looked like a raw browser
+  `<select>`. Stripped native appearance, added a custom SVG chevron
+  (hardcoded to `--text-dim`'s hex since data-URI backgrounds can't read
+  CSS custom properties), bumped to font-weight 600 and a fully-rounded
+  20px pill radius to match the app's `.chip` language, with brass
+  border on hover/focus matching other custom controls. Purely visual —
+  underlying `<select>`/`<option>` behavior unchanged.
+
 - `7d4c799` — Shift background palette from tan to neutral white/gray — revert to `030f30b`
   `--ink-2`/`--ink-3`/`--paper`/`--paper-dim` all had a warm beige/tan cast
   (B channel visibly lower than R/G). Replaced with genuinely neutral
