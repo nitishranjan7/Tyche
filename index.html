@@ -274,6 +274,13 @@
   .pill.rejected,.pill.incomplete{background:rgba(193,96,74,.18);color:var(--rust-text);}
   .empty-state{padding:40px 20px;text-align:center;color:var(--text-dim);font-size:13px;}
 
+  .type-tag{
+    display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+    padding:2px 7px;border-radius:4px;margin-right:8px;background:var(--ink-3);color:var(--text-dim);
+  }
+  .type-tag.vendor{background:rgba(125,160,138,.18);color:var(--sage-text);}
+  .type-tag.transfer{background:rgba(201,154,63,.18);color:var(--brass-text);}
+
   /* ---- Stat callout (single big figure + caption) ---- */
   .stat-callout{
     background:var(--ink-2);border:1px solid var(--line);border-radius:6px;
@@ -602,6 +609,7 @@
         <input class="search-input" id="billsSearch" placeholder="Search vendor, description, or invoice…" oninput="setSearch('bills', this.value)">
       </div>
       <div class="row-list" id="billsList"></div>
+      <div class="add-card-tile" id="addVendorTile" onclick="openAddVendor()">+ Add vendor</div>
     </div>
 
     <!-- CARD PAYMENTS -->
@@ -753,6 +761,21 @@
   </div>
 </div>
 
+<!-- Modal: add vendor -->
+<div class="overlay" id="overlayAddVendor">
+  <div class="modal">
+    <h3>Add a vendor</h3>
+    <p class="modal-sub">New vendors need CFO or Admin approval before they can be linked to a bill.</p>
+    <div class="field"><label>Vendor name</label><input id="newVendorName" placeholder="e.g. Notion Labs"></div>
+    <div class="field"><label>Payment info</label><input id="newVendorPayment" placeholder="e.g. Mercury •••• 5560"></div>
+    <div class="field"><label>Submitting team</label><select id="newVendorTeam"></select></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayAddVendor')">Cancel</button>
+      <button class="btn primary" onclick="createVendorRequest()">Submit for approval</button>
+    </div>
+  </div>
+</div>
+
 <!-- Login gate -->
 <div class="overlay active" id="loginOverlay">
   <div class="modal">
@@ -788,7 +811,7 @@ function initialState(){ return {
     { id:4, teamId:1, teamName:"Marketing", desc:"Figma seats", amount:150, status:"approved", date:"Jul 8", dateISO:"2026-07-08" },
   ],
   approvals: [
-    { id:101, teamId:2, teamName:"Engineering", desc:"Datadog annual plan", amount:3600, status:"pending" },
+    { id:101, teamId:2, teamName:"Engineering", desc:"Datadog annual plan", amount:3600, status:"pending", type:"transfer" },
   ],
   expenses: [
     { id:1, date:"Jul 16", dateISO:"2026-07-16", card:"Amex Platinum ••3348", merchant:"Delta Air Lines", amount:612, status:"Approved", teamId:2 },
@@ -834,6 +857,7 @@ function initialState(){ return {
   nextTxId: 5,
   nextApprovalId: 102,
   nextCardId: 4,
+  nextVendorId: 10,
   transferTargetTeam: null,
   adjustCapTarget: null,
   currentView: "admin",
@@ -1071,7 +1095,7 @@ function submitTransfer(){
   if(amount > remaining){ alert(`This exceeds ${team.name}'s remaining budget of ${fmt(remaining)}.`); return; }
 
   if(amount > state.threshold){
-    state.approvals.push({ id: state.nextApprovalId++, teamId, teamName: team.name, desc: recipient, amount, status:'pending' });
+    state.approvals.push({ id: state.nextApprovalId++, teamId, teamName: team.name, desc: recipient, amount, status:'pending', type:'transfer' });
   } else {
     state.transactions.unshift({ id: state.nextTxId++, teamId, teamName: team.name, desc: recipient, amount, status:'approved', date:'Today', dateISO: TODAY.toISOString().slice(0,10) });
   }
@@ -1120,8 +1144,8 @@ function renderApprovals(){
   list.innerHTML = scoped.slice().reverse().map(a=>`
     <div class="row">
       <div class="r-team">${a.teamName}</div>
-      <div class="r-desc">${a.desc}</div>
-      <div class="r-amt">${fmt(a.amount)}</div>
+      <div class="r-desc"><span class="type-tag ${a.type}">${a.type==='vendor'?'Vendor':'Transfer'}</span>${a.desc}</div>
+      <div class="r-amt">${a.type==='vendor' ? '—' : fmt(a.amount)}</div>
       <div class="r-status">
         ${a.status==='pending'
           ? ((isAdmin() || isCFO())
@@ -1137,7 +1161,10 @@ function renderApprovals(){
 function decideApproval(id, approve){
   const a = state.approvals.find(x=>x.id===id);
   a.status = approve ? 'approved' : 'rejected';
-  if(approve){
+  if(a.type === 'vendor'){
+    const vendor = state.vendors.find(v=>v.id===a.vendorId);
+    if(vendor) vendor.status = approve ? 'Active' : 'Rejected';
+  } else if(approve){
     state.transactions.unshift({ id: state.nextTxId++, teamId:a.teamId, teamName:a.teamName, desc:a.desc, amount:a.amount, status:'approved', date:'Today', dateISO: TODAY.toISOString().slice(0,10) });
   }
   renderAll();
@@ -1417,6 +1444,37 @@ function createCard(){
     status:'Active', expiry:'—', teamId, lastChargeDate: TODAY.toISOString().slice(0,10)
   });
   closeModal('overlayAddCard');
+  renderAll();
+}
+
+function openAddVendor(){
+  const sel = document.getElementById('newVendorTeam');
+  sel.innerHTML = state.teams.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  const teamLead = !isAdmin() && !isCFO();
+  if(teamLead){
+    sel.value = String(currentTeamId());
+    sel.disabled = true;
+  } else {
+    sel.disabled = false;
+  }
+  document.getElementById('newVendorName').value = '';
+  document.getElementById('newVendorPayment').value = '';
+  openModal('overlayAddVendor');
+}
+
+function createVendorRequest(){
+  const name = document.getElementById('newVendorName').value.trim();
+  const payment = document.getElementById('newVendorPayment').value.trim();
+  const teamId = Number(document.getElementById('newVendorTeam').value);
+  if(!name || !payment){ alert('Enter a vendor name and payment info.'); return; }
+  const team = state.teams.find(t=>t.id===teamId);
+  const vendor = { id: state.nextVendorId++, name, owner: (team && team.members[0]) || (team ? team.name : '—'), payment, status:'Pending approval' };
+  state.vendors.push(vendor);
+  state.approvals.push({
+    id: state.nextApprovalId++, type:'vendor', vendorId: vendor.id,
+    teamId, teamName: team ? team.name : '—', desc: `New vendor: ${name}`, amount: null, status:'pending'
+  });
+  closeModal('overlayAddVendor');
   renderAll();
 }
 
