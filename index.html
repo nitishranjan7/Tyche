@@ -90,6 +90,15 @@
     border-radius:20px;
     line-height:1.5;
   }
+  .rail-group-label{
+    padding:16px 20px 6px 22px;
+    font-size:10.5px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--text-dim);
+  }
+  .rail-group-label:first-of-type{padding-top:4px;}
   .rail-footer{
     margin-top:auto;
     padding:16px 20px 0;
@@ -402,7 +411,7 @@
   @media (max-width:760px){
     .app{flex-direction:column;}
     .rail{width:100%;flex-direction:row;overflow-x:auto;padding:12px;}
-    .brand,.rail-footer{display:none;}
+    .brand,.rail-footer,.rail-group-label{display:none;}
     .tab{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
     .tab.active{border-left:none;border-bottom:3px solid var(--brass);}
     .main{padding:24px 18px 40px;}
@@ -457,14 +466,21 @@
         <circle cx="65" cy="65" r="12.75" fill="url(#wheelGrad)"/>
       </svg><span>Tyche</span>
     </div>
+    <div class="rail-group-label">Overview</div>
     <div class="tab active" data-tab="dashboard">Dashboard</div>
-    <div class="tab" data-tab="teams">Teams & Budgets</div>
     <div class="tab" data-tab="approvals">Approvals <span class="badge" id="approvalBadge"></span></div>
-    <div class="tab" data-tab="ledger">Ledger</div>
+
+    <div class="rail-group-label">Spend</div>
+    <div class="tab" data-tab="teams">Teams & Budgets</div>
+    <div class="tab" data-tab="cards">Cards</div>
     <div class="tab" data-tab="expenses">Expenses</div>
+
+    <div class="rail-group-label">Payments</div>
     <div class="tab" data-tab="bills">Bills</div>
     <div class="tab" data-tab="vendors">Vendors</div>
-    <div class="tab" data-tab="cards">Cards</div>
+    <div class="tab" data-tab="ledger">Ledger</div>
+
+    <div class="rail-group-label">Insights</div>
     <div class="tab" data-tab="analytics">Analytics</div>
     <div class="rail-footer">
       Fintech Beta Labs Ltd<br>Demo workspace · mock data
