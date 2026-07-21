@@ -189,7 +189,9 @@
   .stat-card .sub{font-size:11px;color:var(--text-dim);margin-top:4px;}
 
   /* ---- Teams & Budgets ---- */
-  .teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;}
+  .teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;align-items:start;}
+  .team-family{display:flex;flex-direction:column;}
+  .team-family.has-subs{grid-column:span 2;}
   .team-card{
     background:var(--ink-2);
     border:1px solid var(--line);
@@ -203,6 +205,28 @@
   .team-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;margin-bottom:2px;letter-spacing:-0.005em;}
   .team-card.sub-team{border-left:3px solid var(--brass);background:var(--ink-3);margin-left:24px;}
   .sub-team-tag{font-size:10.5px;color:var(--brass-text);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+
+  /* Compact sub-team cards nested under a visible parent within the same family block */
+  .sub-team-row{
+    display:flex;flex-wrap:wrap;gap:12px;
+    margin:12px 0 0 22px;padding-left:18px;
+    border-left:2px solid var(--line);
+  }
+  .team-card.compact-sub{
+    position:relative;
+    flex:1 1 150px;min-width:150px;
+    padding:14px;
+  }
+  .team-card.compact-sub::before{
+    content:'';position:absolute;left:-18px;top:26px;width:16px;height:2px;background:var(--line);
+  }
+  .team-card.compact-sub .team-name{font-size:14px;}
+  .team-card.compact-sub .team-members{font-size:10.5px;margin-bottom:8px;}
+  .team-card.compact-sub .reset-note{font-size:9.5px;}
+  .team-card.compact-sub .team-btns .btn{font-size:10.5px;padding:6px 8px;}
+  .dial-wrap.sub-dial{width:90px;height:90px;margin:2px 0 8px;}
+  .dial-wrap.sub-dial .dial-remaining{font-size:12px;}
+  .dial-wrap.sub-dial .dial-of{font-size:8.5px;}
   .team-members{font-size:11.5px;color:var(--text-dim);margin-bottom:14px;}
   .reset-note{font-size:10.5px;color:var(--text-dim);margin:-6px 0 10px;}
 
@@ -453,6 +477,8 @@
     .main{padding:24px 18px 40px;}
     .grid-3{grid-template-columns:1fr;}
     .grid-4{grid-template-columns:1fr;}
+    .team-family.has-subs{grid-column:span 1;}
+    .sub-team-row{flex-direction:column;}
 
     #view-expenses .row, #view-bills .row, #view-cards .row, #view-vendors .row{
       flex-direction:column;
@@ -959,6 +985,40 @@ function teamCardHTML(t){
     </div>`;
 }
 
+function subTeamCardHTML(t){
+  const spent = teamSpent(t.id);
+  const pct = Math.round((spent/t.cap)*100);
+  const remaining = Math.max(t.cap - spent,0);
+  return `
+    <div class="team-card compact-sub">
+      <div class="team-name">${t.name}</div>
+      <div class="team-members">${t.members.join(', ')}</div>
+      <div class="dial-wrap sub-dial">
+        ${dialSVG(pct, t.id)}
+        <div class="dial-center">
+          <div class="dial-remaining mono">${fmt(remaining)}</div>
+          <div class="dial-of">left of ${fmt(t.cap)}</div>
+        </div>
+      </div>
+      <div class="reset-note">Resets monthly</div>
+      <div class="team-btns">
+        <button class="btn" onclick="openTransfer(${t.id})">Transfer</button>
+        <button class="btn primary" onclick="adjustCap(${t.id})">Adjust cap</button>
+      </div>
+    </div>`;
+}
+
+function teamFamilyHTML(t, subs){
+  if(subs.length===0) return `<div class="team-family">${teamCardHTML(t)}</div>`;
+  return `
+    <div class="team-family has-subs">
+      ${teamCardHTML(t)}
+      <div class="sub-team-row">
+        ${subs.map(subTeamCardHTML).join('')}
+      </div>
+    </div>`;
+}
+
 function dashboardTeamCardHTML(t){
   const spent = teamSpent(t.id);
   const pct = Math.round((spent/t.cap)*100);
@@ -1049,18 +1109,6 @@ function renderDashboard(){
   }
 }
 
-function orderedTeamsForDisplay(teams){
-  const topLevel = teams.filter(t => !t.parentTeamId);
-  const result = [];
-  topLevel.forEach(t=>{
-    result.push(t);
-    teams.filter(s => s.parentTeamId === t.id).forEach(s=>result.push(s));
-  });
-  const included = new Set(result.map(t=>t.id));
-  teams.forEach(t=>{ if(!included.has(t.id)) result.push(t); });
-  return result;
-}
-
 function renderTeams(){
   document.getElementById('thresholdNote').textContent = fmt(state.threshold);
   const grid = document.getElementById('teamsGrid');
@@ -1068,7 +1116,10 @@ function renderTeams(){
   const emptyNote = ((isAdmin() || isCFO()) && teams.length===0)
     ? `<div class="empty-state" style="grid-column:1/-1;">No teams yet. Create your first team to start tracking budgets.</div>`
     : '';
-  grid.innerHTML = emptyNote + orderedTeamsForDisplay(teams).map(teamCardHTML).join('') +
+  const idsInScope = new Set(teams.map(t=>t.id));
+  const displayRoots = teams.filter(t => !t.parentTeamId || !idsInScope.has(t.parentTeamId));
+  const familiesHtml = displayRoots.map(t => teamFamilyHTML(t, teams.filter(s=>s.parentTeamId===t.id))).join('');
+  grid.innerHTML = emptyNote + familiesHtml +
     ((isAdmin() || isCFO()) ? `<div class="add-team-card" onclick="openNewTeamModal()">+ Create a team</div>` : '');
 }
 
