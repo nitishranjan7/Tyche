@@ -22,6 +22,25 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `168646c` — Restructure Teams & Budgets into list-with-expandable-rows and a team detail view — revert to `970c4ac`
+  Replaced the card grid with `#teamsContainer`, a list of rows (chevron,
+  name, compact progress bar, spend/cap figures, Transfer button). Only
+  teams with sub-teams get a chevron; expanding reveals sub-team rows
+  indented beneath, smaller text and a thinner bar. Clicking a team's name
+  opens a detail view — reusing `teamCardHTML()` completely unchanged
+  (same full-size dial, members, Resets-monthly note, both Transfer and
+  Adjust Cap) — as an in-page panel with a "‹ Back to Teams & Budgets"
+  link, replacing the list rather than a modal: this app's modals are all
+  small action forms, while the Bills tab's existing "All Bills"/
+  "Payments" toggle already established in-page panel swapping as the
+  pattern for browsable content. Team leads skip the list entirely and go
+  straight to their one team's detail (no back link, matching how
+  `renderDashboard()`'s non-admin branch already behaves). Removed the
+  now-obsolete grid/family-block CSS and `teamFamilyHTML()`/
+  `subTeamCardHTML()` from the previous commit. `teamSpent()`, role
+  scoping, period reset, and the Transfer/Adjust-cap modals themselves
+  are untouched.
+
 - `977edbd` — Visually nest sub-teams under their parent instead of equal-size siblings — revert to `c4ead4d`
   `teamsGrid` now lays out parent(+children) "family" blocks
   (`.team-family`) as its grid items instead of every team individually.
