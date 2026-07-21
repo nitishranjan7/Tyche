@@ -189,9 +189,6 @@
   .stat-card .sub{font-size:11px;color:var(--text-dim);margin-top:4px;}
 
   /* ---- Teams & Budgets ---- */
-  .teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;align-items:start;}
-  .team-family{display:flex;flex-direction:column;}
-  .team-family.has-subs{grid-column:span 2;}
   .team-card{
     background:var(--ink-2);
     border:1px solid var(--line);
@@ -205,30 +202,40 @@
   .team-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;margin-bottom:2px;letter-spacing:-0.005em;}
   .team-card.sub-team{border-left:3px solid var(--brass);background:var(--ink-3);margin-left:24px;}
   .sub-team-tag{font-size:10.5px;color:var(--brass-text);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-
-  /* Compact sub-team cards nested under a visible parent within the same family block */
-  .sub-team-row{
-    display:flex;flex-wrap:wrap;gap:12px;
-    margin:12px 0 0 22px;padding-left:18px;
-    border-left:2px solid var(--line);
-  }
-  .team-card.compact-sub{
-    position:relative;
-    flex:1 1 150px;min-width:150px;
-    padding:14px;
-  }
-  .team-card.compact-sub::before{
-    content:'';position:absolute;left:-18px;top:26px;width:16px;height:2px;background:var(--line);
-  }
-  .team-card.compact-sub .team-name{font-size:14px;}
-  .team-card.compact-sub .team-members{font-size:10.5px;margin-bottom:8px;}
-  .team-card.compact-sub .reset-note{font-size:9.5px;}
-  .team-card.compact-sub .team-btns .btn{font-size:10.5px;padding:6px 8px;}
-  .dial-wrap.sub-dial{width:90px;height:90px;margin:2px 0 8px;}
-  .dial-wrap.sub-dial .dial-remaining{font-size:12px;}
-  .dial-wrap.sub-dial .dial-of{font-size:8.5px;}
   .team-members{font-size:11.5px;color:var(--text-dim);margin-bottom:14px;}
   .reset-note{font-size:10.5px;color:var(--text-dim);margin:-6px 0 10px;}
+
+  /* Teams list (rows, expandable sub-team rows) */
+  .team-row-list{background:var(--ink-2);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .team-list-row{cursor:default;transition:background .1s ease;}
+  .team-list-row:hover{background:rgba(20,24,29,.025);}
+  .row .team-chevron{
+    width:16px;flex-shrink:0;color:var(--text-dim);cursor:pointer;
+    font-size:10px;text-align:center;user-select:none;
+  }
+  .row .team-chevron.no-subs{visibility:hidden;cursor:default;}
+  .row .team-row-name{width:150px;flex-shrink:0;font-weight:600;cursor:pointer;}
+  .row .team-row-name:hover{color:var(--brass-text);text-decoration:underline;}
+  .row .team-row-bar{flex:1;height:8px;border-radius:4px;background:var(--paper-dim);overflow:hidden;}
+  .row .team-row-bar .fill{height:100%;}
+  .row .team-row-figures{width:150px;flex-shrink:0;text-align:right;}
+  .row.sub-team-list-row{padding-left:52px;font-size:11.5px;color:var(--text-dim);}
+  .row.sub-team-list-row .team-row-name{font-size:12.5px;width:130px;}
+  .row.sub-team-list-row .team-row-bar{height:5px;}
+  .row.sub-team-list-row .team-row-figures{width:130px;}
+
+  .add-team-row{
+    margin-top:10px;padding:14px 20px;
+    border:1.5px dashed var(--line);border-radius:6px;
+    text-align:center;color:var(--text-dim);font-size:13px;cursor:pointer;
+    transition:border-color .15s ease,color .15s ease;
+  }
+  .add-team-row:hover{border-color:var(--brass);color:var(--brass-text);}
+
+  /* Team detail view */
+  .team-detail-back{font-size:12.5px;color:var(--text-dim);cursor:pointer;margin-bottom:16px;display:inline-block;}
+  .team-detail-back:hover{color:var(--brass-text);}
+  .team-detail-wrap .team-card{max-width:320px;}
 
   .view-header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
   .period-controls{text-align:right;}
@@ -265,17 +272,6 @@
   .btn.small{padding:6px 10px;font-size:11.5px;flex:none;}
   .btn.danger:hover{border-color:var(--rust);}
 
-  .add-team-card{
-    border:1.5px dashed var(--line);
-    border-radius:6px;
-    display:flex;align-items:center;justify-content:center;
-    color:var(--text-dim);
-    font-size:13px;
-    cursor:pointer;
-    min-height:236px;
-    transition:border-color .15s ease,color .15s ease;
-  }
-  .add-team-card:hover{border-color:var(--brass);color:var(--brass-text);}
   .add-card-tile{
     border:1.5px dashed var(--line);
     border-radius:6px;
@@ -477,8 +473,13 @@
     .main{padding:24px 18px 40px;}
     .grid-3{grid-template-columns:1fr;}
     .grid-4{grid-template-columns:1fr;}
-    .team-family.has-subs{grid-column:span 1;}
-    .sub-team-row{flex-direction:column;}
+    .team-list-row{flex-wrap:wrap;row-gap:8px;}
+    .row .team-chevron{order:1;}
+    .row .team-row-name{order:2;width:auto;flex:1 1 auto;}
+    .row .team-row-figures{order:3;width:auto;margin-left:auto;}
+    .row .team-row-bar{order:4;flex-basis:100%;}
+    .team-list-row .btn.small{order:5;flex-basis:100%;}
+    .row.sub-team-list-row{padding-left:28px;}
 
     #view-expenses .row, #view-bills .row, #view-cards .row, #view-vendors .row{
       flex-direction:column;
@@ -589,7 +590,7 @@
           <div class="period-note" id="periodResetNote">✓ New period started</div>
         </div>
       </div>
-      <div class="teams-grid" id="teamsGrid"></div>
+      <div id="teamsContainer"></div>
     </div>
 
     <!-- APPROVALS -->
@@ -902,7 +903,9 @@ function initialState(){ return {
   transferTargetTeam: null,
   adjustCapTarget: null,
   currentView: "admin",
-  emptyMode: false
+  emptyMode: false,
+  teamsExpanded: new Set(),
+  teamsDetailId: null
 }; }
 
 let state = initialState();
@@ -985,38 +988,34 @@ function teamCardHTML(t){
     </div>`;
 }
 
-function subTeamCardHTML(t){
+function teamListRowHTML(t, isSub, hasSubs){
   const spent = teamSpent(t.id);
-  const pct = Math.round((spent/t.cap)*100);
-  const remaining = Math.max(t.cap - spent,0);
+  const pct = Math.min(Math.round((spent/t.cap)*100),100);
+  const expanded = state.teamsExpanded.has(t.id);
   return `
-    <div class="team-card compact-sub">
-      <div class="team-name">${t.name}</div>
-      <div class="team-members">${t.members.join(', ')}</div>
-      <div class="dial-wrap sub-dial">
-        ${dialSVG(pct, t.id)}
-        <div class="dial-center">
-          <div class="dial-remaining mono">${fmt(remaining)}</div>
-          <div class="dial-of">left of ${fmt(t.cap)}</div>
-        </div>
-      </div>
-      <div class="reset-note">Resets monthly</div>
-      <div class="team-btns">
-        <button class="btn" onclick="openTransfer(${t.id})">Transfer</button>
-        <button class="btn primary" onclick="adjustCap(${t.id})">Adjust cap</button>
-      </div>
+    <div class="row team-list-row${isSub ? ' sub-team-list-row' : ''}">
+      <span class="team-chevron${hasSubs ? '' : ' no-subs'}"${hasSubs ? ` onclick="toggleTeamExpand(${t.id})"` : ''}>${hasSubs ? (expanded ? '▾' : '▸') : ''}</span>
+      <span class="team-row-name" onclick="openTeamDetail(${t.id})">${t.name}</span>
+      <div class="team-row-bar"><div class="fill" style="width:${pct}%;background:${usageColor(pct)}"></div></div>
+      <span class="team-row-figures mono">${fmt(spent)} / ${fmt(t.cap)}</span>
+      <button class="btn small" onclick="openTransfer(${t.id})">Transfer</button>
     </div>`;
 }
 
-function teamFamilyHTML(t, subs){
-  if(subs.length===0) return `<div class="team-family">${teamCardHTML(t)}</div>`;
-  return `
-    <div class="team-family has-subs">
-      ${teamCardHTML(t)}
-      <div class="sub-team-row">
-        ${subs.map(subTeamCardHTML).join('')}
-      </div>
-    </div>`;
+function toggleTeamExpand(teamId){
+  if(state.teamsExpanded.has(teamId)) state.teamsExpanded.delete(teamId);
+  else state.teamsExpanded.add(teamId);
+  renderTeams();
+}
+
+function openTeamDetail(teamId){
+  state.teamsDetailId = teamId;
+  renderTeams();
+}
+
+function closeTeamDetail(){
+  state.teamsDetailId = null;
+  renderTeams();
 }
 
 function dashboardTeamCardHTML(t){
@@ -1111,16 +1110,45 @@ function renderDashboard(){
 
 function renderTeams(){
   document.getElementById('thresholdNote').textContent = fmt(state.threshold);
-  const grid = document.getElementById('teamsGrid');
-  const teams = (isAdmin() || isCFO()) ? state.teams : state.teams.filter(t=>t.id===currentTeamId());
-  const emptyNote = ((isAdmin() || isCFO()) && teams.length===0)
-    ? `<div class="empty-state" style="grid-column:1/-1;">No teams yet. Create your first team to start tracking budgets.</div>`
-    : '';
-  const idsInScope = new Set(teams.map(t=>t.id));
-  const displayRoots = teams.filter(t => !t.parentTeamId || !idsInScope.has(t.parentTeamId));
-  const familiesHtml = displayRoots.map(t => teamFamilyHTML(t, teams.filter(s=>s.parentTeamId===t.id))).join('');
-  grid.innerHTML = emptyNote + familiesHtml +
-    ((isAdmin() || isCFO()) ? `<div class="add-team-card" onclick="openNewTeamModal()">+ Create a team</div>` : '');
+  const container = document.getElementById('teamsContainer');
+  const scopeAdmin = isAdmin() || isCFO();
+  const teams = scopeAdmin ? state.teams : state.teams.filter(t=>t.id===currentTeamId());
+
+  if(!scopeAdmin){
+    const team = teams[0];
+    container.innerHTML = team
+      ? `<div class="team-detail-wrap">${teamCardHTML(team)}</div>`
+      : `<div class="empty-state">No team assigned.</div>`;
+    return;
+  }
+
+  if(state.teamsDetailId !== null){
+    const team = state.teams.find(t=>t.id===state.teamsDetailId);
+    if(team){
+      container.innerHTML = `<div class="team-detail-back" onclick="closeTeamDetail()">‹ Back to Teams & Budgets</div>
+        <div class="team-detail-wrap">${teamCardHTML(team)}</div>`;
+      return;
+    }
+    state.teamsDetailId = null;
+  }
+
+  if(teams.length===0){
+    container.innerHTML = `<div class="empty-state">No teams yet. Create your first team to start tracking budgets.</div>
+      <div class="add-team-row" onclick="openNewTeamModal()">+ Create a team</div>`;
+    return;
+  }
+
+  const topLevel = teams.filter(t => !t.parentTeamId);
+  const rowsHtml = topLevel.map(t=>{
+    const subs = teams.filter(s=>s.parentTeamId===t.id);
+    let html = teamListRowHTML(t, false, subs.length>0);
+    if(subs.length && state.teamsExpanded.has(t.id)){
+      html += subs.map(s=>teamListRowHTML(s, true, false)).join('');
+    }
+    return html;
+  }).join('');
+  container.innerHTML = `<div class="team-row-list">${rowsHtml}</div>
+    <div class="add-team-row" onclick="openNewTeamModal()">+ Create a team</div>`;
 }
 
 function adjustCap(teamId){
@@ -1739,6 +1767,8 @@ function startEmptyState(){
   state.billFilter = 'All';
   state.search = { ledger:"", expenses:"", bills:"", vendors:"" };
   state.emptyMode = true;
+  state.teamsExpanded = new Set();
+  state.teamsDetailId = null;
   renderAll();
 }
 
