@@ -22,6 +22,20 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `c9b3df2` — Fix Analytics range dropdown not filtering data — revert to `776f367`
+  `#analyticsRange` had no `onchange` handler and nothing ever read its
+  value — purely decorative since it was first built. Added `state.
+  analyticsRange`, `setAnalyticsRange()`, and `analyticsActiveIndices()`
+  (trailing N of the 12 synthetic months, N depending on the selected
+  option) wired into `analyticsMonthlyTotals()`/`analyticsVendorTotals()`.
+  Also fixed a bug this surfaced: the "By month" bars mapped over all 12
+  `ANALYTICS_MONTHS` while indexing into the now-range-filtered (shorter)
+  totals array, which would have misaligned or gone out of bounds — now
+  maps over the same active indices used to build the totals. "Vs. last
+  month" and "By team" mode are deliberately unaffected by the range: the
+  former is always a fixed Jun→Jul comparison, the latter reads live
+  `teamSpent()` data with no month-bucket concept to filter.
+
 - `168646c` — Restructure Teams & Budgets into list-with-expandable-rows and a team detail view — revert to `970c4ac`
   Replaced the card grid with `#teamsContainer`, a list of rows (chevron,
   name, compact progress bar, spend/cap figures, Transfer button). Only
