@@ -22,6 +22,27 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `1331de8` — Merge remote-tracking branch 'origin/main'
+  `origin/main` had diverged with 4 commits from a separate Claude Code
+  session (Stefania's): a logo size bump + recolor to solid red on the
+  old pinwheel mark, a placeholder-company-name fix, and "P4.1" (per-team
+  approval delegation, per-team thresholds replacing the old global
+  setting, budget-permission gating, team renaming, sub-team creation
+  from a team lead's own detail view). Two hunks conflicted, both in the
+  sidebar `.brand` logo — `align-items`/`gap` and the `<svg>`/gradient —
+  resolved in favor of this session's new design-handoff mark (blue
+  gradient, 32px, cap-height aligned) per explicit instruction, discarding
+  the red recolor and size bump. Everything else auto-merged cleanly,
+  which checked out on inspection: `168646c` (this session's Teams &
+  Budgets list/detail restructuring) is an ancestor of Stefania's P4.1
+  commit, so her work was already built on top of the new list/detail
+  architecture rather than the old card grid — the per-team threshold/
+  approver-delegate UI and rename affordance landed inside `teamCardHTML`
+  (used as this session's detail-view content) coherently, not just
+  textually. Verified in-browser: no console errors, threshold/approver
+  save round-trips correctly, mobile unaffected, logo confirmed as the
+  new mark via computed styles (not just visually).
+
 - `1b421ea` — Enlarge sidebar logomark and align it to the wordmark's cap-height — revert to `b3fa96b`
   Logomark bumped 22px → 32px (too small at the original size). Switched
   `.brand` from `align-items:center` to `flex-start` and gave the SVG a
