@@ -200,7 +200,10 @@
     align-items:center;
     text-align:center;
   }
-  .team-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;margin-bottom:2px;letter-spacing:-0.005em;}
+  .team-name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.005em;}
+  .team-name-row{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:2px;}
+  .team-name-edit{font-size:12px;color:var(--text-dim);cursor:pointer;line-height:1;}
+  .team-name-edit:hover{color:var(--brass-text);}
   .team-card.sub-team{border-left:3px solid var(--brass);background:var(--ink-3);margin-left:24px;}
   .sub-team-tag{font-size:10.5px;color:var(--brass-text);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
   .team-members{font-size:11.5px;color:var(--text-dim);margin-bottom:14px;}
@@ -234,12 +237,15 @@
   .add-team-row:hover{border-color:var(--brass);color:var(--brass-text);}
 
   /* Team detail view */
-  .team-detail-back{font-size:12.5px;color:var(--text-dim);cursor:pointer;margin-bottom:16px;display:inline-block;}
-  .team-detail-back:hover{color:var(--brass-text);}
+  .team-detail-back{font-size:13.5px;font-weight:600;color:var(--brass-text);cursor:pointer;margin-bottom:16px;display:inline-block;}
+  .team-detail-back:hover{color:var(--brass-bright);text-decoration:underline;}
   .team-detail-wrap .team-card{max-width:320px;}
+  .sub-teams-heading{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin:24px 0 12px;}
+  .sub-teams-wrap{display:flex;flex-direction:column;gap:16px;}
 
   .view-header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
-  .period-controls{text-align:right;}
+  .view-header-row > div:first-child{flex:1;min-width:0;}
+  .period-controls{text-align:right;flex-shrink:0;}
   .period-note{display:none;margin-top:8px;font-size:12px;color:var(--sage-text);}
   .period-note.show{display:block;}
 
@@ -254,6 +260,8 @@
   .dial-of{font-size:10px;color:var(--text-dim);margin-top:2px;}
 
   .team-btns{display:flex;gap:8px;width:100%;margin-top:4px;}
+  .team-approver-field{width:100%;text-align:left;margin-top:14px;}
+  .team-approver-save-row{width:100%;text-align:left;margin-top:12px;}
   .btn{
     font-family:'Inter',sans-serif;
     font-size:12.5px;
@@ -272,6 +280,9 @@
   .btn.primary:hover{background:var(--brass-bright);}
   .btn.small{padding:6px 10px;font-size:11.5px;flex:none;}
   .btn.danger:hover{border-color:var(--rust);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;background:var(--paper-dim);border-color:var(--line);color:var(--text-dim);}
+  .btn:disabled:hover{background:var(--paper-dim);border-color:var(--line);}
+  .budget-disabled-note{width:100%;font-size:10.5px;color:var(--text-dim);margin-top:6px;text-align:center;}
 
   .add-card-tile{
     border:1.5px dashed var(--line);
@@ -421,6 +432,7 @@
     background:var(--ink);color:var(--text-light);font-size:13.5px;font-family:'Inter',sans-serif;
   }
   .field input:focus,.field select:focus{outline:none;border-color:var(--brass);}
+  .field input:disabled,.field select:disabled{opacity:.55;cursor:not-allowed;background:var(--paper-dim);}
   .modal-note{font-size:11.5px;color:var(--brass-text);background:rgba(201,154,63,.1);padding:8px 10px;border-radius:6px;margin-bottom:14px;display:none;}
   .modal-note.error{color:var(--rust-text);background:rgba(193,96,74,.1);}
   .modal-btns{display:flex;gap:10px;margin-top:20px;}
@@ -548,7 +560,7 @@
     <div class="tab" data-tab="analytics">Analytics</div>
     <div class="tab" data-tab="ledger">Ledger</div>
     <div class="rail-footer">
-      Fintech Beta Labs Ltd<br>Demo workspace · mock data
+      <span id="companyName">Tyche</span><br>Demo workspace · mock data
       <div style="margin-top:10px;">
         <a href="#" class="rail-link" id="emptyStateLink" onclick="startEmptyState();return false;">View empty state</a>
         <a href="#" class="rail-link" id="restoreDataLink" onclick="restoreDemoData();return false;" style="display:none;">Restore demo data</a>
@@ -578,7 +590,7 @@
       <div class="view-header-row">
         <div>
           <h1>Teams & Budgets</h1>
-          <p class="subhead">Each team draws only from its own capped budget — never the company pot. Transfers above <span class="mono" id="thresholdNote">$2,000</span> need your approval.</p>
+          <p class="subhead" id="teamsSubhead"></p>
         </div>
         <div class="period-controls" id="periodControls">
           <button class="btn small" onclick="startNewPeriod()">Start new period</button>
@@ -723,7 +735,7 @@
 <!-- Modal: new team -->
 <div class="overlay" id="overlayNewTeam">
   <div class="modal">
-    <h3>Create a team</h3>
+    <h3 id="newTeamModalTitle">Create a team</h3>
     <p class="modal-sub">Set a capped budget. Members will only ever see this amount — never the company total.</p>
     <div class="field"><label>Team name</label><input id="newTeamName" placeholder="e.g. Design"></div>
     <div class="field"><label>Budget cap</label><input id="newTeamCap" type="number" placeholder="5000"></div>
@@ -736,12 +748,24 @@
   </div>
 </div>
 
+<!-- Modal: start new period -->
+<div class="overlay" id="overlayStartPeriod">
+  <div class="modal">
+    <h3>Start a new period?</h3>
+    <p class="modal-sub">Budgets reset automatically on the 1st of each month, for every team. Use this only to reset every team's spend tracking early, right now.</p>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayStartPeriod')">Cancel</button>
+      <button class="btn primary" onclick="confirmStartNewPeriod()">Start new period</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: settings -->
 <div class="overlay" id="overlaySettings">
   <div class="modal">
     <h3>Settings</h3>
-    <p class="modal-sub">Controls that apply company-wide.</p>
-    <div class="field"><label>Auto-approve threshold</label><input id="settingsThreshold" type="number" placeholder="2000"></div>
+    <p class="modal-sub">Each team has its own approval threshold, editable from its team card. This sets the starting threshold for teams you create from here on.</p>
+    <div class="field"><label>Default approval threshold (new teams)</label><input id="settingsThreshold" type="number" placeholder="2000"></div>
     <div class="modal-btns">
       <button class="btn" onclick="closeModal('overlaySettings')">Cancel</button>
       <button class="btn primary" onclick="saveSettings()">Save</button>
@@ -764,12 +788,24 @@
   </div>
 </div>
 
+<!-- Modal: rename team -->
+<div class="overlay" id="overlayRenameTeam">
+  <div class="modal">
+    <h3>Rename team</h3>
+    <div class="field"><label>Team name</label><input id="renameTeamInput" placeholder="e.g. Design"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayRenameTeam')">Cancel</button>
+      <button class="btn primary" onclick="saveTeamName()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: adjust cap -->
 <div class="overlay" id="overlayAdjustCap">
   <div class="modal">
-    <h3>Adjust budget cap</h3>
+    <h3>Set budget</h3>
     <p class="modal-sub" id="adjustCapSub"></p>
-    <div class="field"><label>New budget cap</label><input id="adjustCapInput" type="number" placeholder="5000"></div>
+    <div class="field"><label>New budget</label><input id="adjustCapInput" type="number" placeholder="5000"></div>
     <div class="modal-btns">
       <button class="btn" onclick="closeModal('overlayAdjustCap')">Cancel</button>
       <button class="btn primary" onclick="saveCap()">Save</button>
@@ -832,14 +868,15 @@
 const TODAY = new Date(2026,6,19);
 
 function initialState(){ return {
+  companyName: "Tyche",
   totalBalance: 184320,
-  threshold: 2000,
+  defaultThreshold: 2000,
   periodStart: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1),
   teams: [
-    { id:1, name:"Marketing", cap:12000, members:["A. Kade","R. Osei"], parentTeamId:null },
-    { id:2, name:"Engineering", cap:25000, members:["S. Vance","T. Idowu","L. Park"], parentTeamId:null },
-    { id:3, name:"Ops", cap:6000, members:["J. Marsh"], parentTeamId:null },
-    { id:4, name:"Growth", cap:3000, members:["A. Kade"], parentTeamId:1 },
+    { id:1, name:"Marketing", cap:12000, members:["A. Kade","R. Osei"], parentTeamId:null, approverDelegate:'cfo', threshold:2000 },
+    { id:2, name:"Engineering", cap:25000, members:["S. Vance","T. Idowu","L. Park"], parentTeamId:null, approverDelegate:'cfo', threshold:2000 },
+    { id:3, name:"Ops", cap:6000, members:["J. Marsh"], parentTeamId:null, approverDelegate:'cfo', threshold:2000 },
+    { id:4, name:"Growth", cap:3000, members:["A. Kade"], parentTeamId:1, approverDelegate:'cfo', threshold:2000 },
   ],
   transactions: [
     { id:1, teamId:1, teamName:"Marketing", desc:"Meta Ads Ltd", amount:2200, status:"approved", date:"Jul 14", dateISO:"2026-07-14" },
@@ -898,6 +935,7 @@ function initialState(){ return {
   nextVendorId: 10,
   transferTargetTeam: null,
   adjustCapTarget: null,
+  renameTeamTarget: null,
   currentView: "admin",
   emptyMode: false,
   teamsExpanded: new Set(),
@@ -928,6 +966,11 @@ const teamName = id => (state.teams.find(t=>t.id===id) || {}).name || '—';
 const isAdmin = () => state.currentView === 'admin';
 const isCFO = () => state.currentView === 'cfo';
 const currentTeamId = () => (isAdmin() || isCFO()) ? null : state.currentView;
+
+function canManageTeamSettings(t){
+  if(isAdmin() || isCFO()) return true;
+  return t.parentTeamId !== null && t.parentTeamId === currentTeamId();
+}
 
 function teamSpent(teamId, since = state.periodStart){
   const onOrAfter = iso => new Date(iso+'T00:00:00') >= since;
@@ -967,7 +1010,10 @@ function teamCardHTML(t){
   return `
     <div class="team-card${parent ? ' sub-team' : ''}">
       ${parent ? `<div class="sub-team-tag">↳ Sub-team of ${parent.name}</div>` : ''}
-      <div class="team-name">${t.name}</div>
+      <div class="team-name-row">
+        <div class="team-name">${t.name}</div>
+        ${canManageTeamSettings(t) ? `<span class="team-name-edit" onclick="openRenameTeam(${t.id})" title="Rename team">✎</span>` : ''}
+      </div>
       <div class="team-members">${t.members.join(', ')}</div>
       <div class="dial-wrap">
         ${dialSVG(pct, t.id)}
@@ -979,9 +1025,50 @@ function teamCardHTML(t){
       <div class="reset-note">Resets monthly</div>
       <div class="team-btns">
         <button class="btn" onclick="openTransfer(${t.id})">Transfer</button>
-        <button class="btn primary" onclick="adjustCap(${t.id})">Adjust cap</button>
+        ${canManageTeamSettings(t)
+          ? `<button class="btn primary" onclick="adjustCap(${t.id})">Set Budget</button>`
+          : `<button class="btn primary" disabled title="${parent ? `Only Admin, CFO, or the ${parent.name} lead can manage this team's budget and approval settings.` : 'Only Admin or CFO can manage this team\'s budget and approval settings.'}">Set Budget</button>`}
       </div>
+      ${!canManageTeamSettings(t) ? `<div class="budget-disabled-note">${parent ? `Only Admin, CFO, or the ${parent.name} lead can manage this team's budget and approval settings.` : 'Only Admin or CFO can manage this team\'s budget and approval settings.'}</div>` : ''}
+      <div class="field team-approver-field">
+        <label>Approval threshold (per transfer)</label>
+        <input type="number" id="thresholdInput-${t.id}" value="${t.threshold}" ${canManageTeamSettings(t) ? '' : 'disabled'}>
+      </div>
+      ${canManageTeamSettings(t) ? `
+      <div class="field team-approver-field">
+        <label>Who approves transfers above this threshold?</label>
+        <select id="approverSelect-${t.id}">
+          <option value="cfo" ${t.approverDelegate==='cfo' ? 'selected' : ''}>CFO</option>
+          <option value="lead" ${t.approverDelegate==='lead' ? 'selected' : ''}>This team's lead</option>
+        </select>
+      </div>
+      <div class="team-approver-save-row">
+        <button class="btn primary small" onclick="saveApprovalSettings(${t.id})">Save</button>
+        <div class="period-note" id="approverSaveNote-${t.id}">✓ Saved</div>
+      </div>` : ''}
     </div>`;
+}
+
+function saveApprovalSettings(teamId){
+  const team = state.teams.find(t=>t.id===teamId);
+  const thresholdInput = document.getElementById('thresholdInput-'+teamId);
+  const approverSelect = document.getElementById('approverSelect-'+teamId);
+  const num = parseFloat(thresholdInput.value);
+  if(isNaN(num) || num<=0){ alert('Enter a valid threshold amount.'); return; }
+  if(team.parentTeamId){
+    const parent = state.teams.find(p=>p.id===team.parentTeamId);
+    if(num > parent.threshold){
+      alert(`Cannot save: this threshold (${fmt(num)}) exceeds ${parent.name}'s approval threshold of ${fmt(parent.threshold)}. A sub-team's threshold can't be higher than its parent's.`);
+      return;
+    }
+  }
+  team.threshold = num;
+  team.approverDelegate = approverSelect.value;
+  renderAll();
+  const note = document.getElementById('approverSaveNote-'+teamId);
+  note.classList.add('show');
+  clearTimeout(window._approverSaveNoteTimer);
+  window._approverSaveNoteTimer = setTimeout(()=>note.classList.remove('show'), 2500);
 }
 
 function teamListRowHTML(t, isSub, hasSubs){
@@ -1105,18 +1192,34 @@ function renderDashboard(){
 }
 
 function renderTeams(){
-  document.getElementById('thresholdNote').textContent = fmt(state.threshold);
   const container = document.getElementById('teamsContainer');
   const scopeAdmin = isAdmin() || isCFO();
   const teams = scopeAdmin ? state.teams : state.teams.filter(t=>t.id===currentTeamId());
+  const subheadEl = document.getElementById('teamsSubhead');
 
   if(!scopeAdmin){
     const team = teams[0];
-    container.innerHTML = team
-      ? `<div class="team-detail-wrap">${teamCardHTML(team)}</div>`
-      : `<div class="empty-state">No team assigned.</div>`;
+    subheadEl.textContent = team
+      ? `Your team draws only from its own capped budget — never the company pot. Transfers above ${fmt(team.threshold)} need approval.`
+      : 'No team assigned.';
+    if(!team){
+      container.innerHTML = `<div class="empty-state">No team assigned.</div>`;
+      return;
+    }
+    const subTeams = state.teams.filter(s=>s.parentTeamId===team.id);
+    const canCreateSubTeam = !team.parentTeamId;
+    const subTeamsSection = (canCreateSubTeam || subTeams.length)
+      ? `<div class="sub-teams-heading">Sub-teams you manage budgets for</div>
+         <div class="team-detail-wrap sub-teams-wrap">
+           ${subTeams.map(s=>teamCardHTML(s)).join('')}
+           ${canCreateSubTeam ? `<div class="add-team-row" onclick="openNewSubTeamModal(${team.id})">+ Create a sub-team</div>` : ''}
+         </div>`
+      : '';
+    container.innerHTML = `<div class="team-detail-wrap">${teamCardHTML(team)}</div>` + subTeamsSection;
     return;
   }
+
+  subheadEl.textContent = "Each team draws only from its own capped budget — never the company pot. Each team sets its own approval threshold for transfers.";
 
   if(state.teamsDetailId !== null){
     const team = state.teams.find(t=>t.id===state.teamsDetailId);
@@ -1147,10 +1250,26 @@ function renderTeams(){
     <div class="add-team-row" onclick="openNewTeamModal()">+ Create a team</div>`;
 }
 
+function openRenameTeam(teamId){
+  const team = state.teams.find(t=>t.id===teamId);
+  state.renameTeamTarget = teamId;
+  document.getElementById('renameTeamInput').value = team.name;
+  openModal('overlayRenameTeam');
+}
+
+function saveTeamName(){
+  const team = state.teams.find(t=>t.id===state.renameTeamTarget);
+  const name = document.getElementById('renameTeamInput').value.trim();
+  if(!name){ alert('Enter a team name.'); return; }
+  team.name = name;
+  closeModal('overlayRenameTeam');
+  renderAll();
+}
+
 function adjustCap(teamId){
   const team = state.teams.find(t=>t.id===teamId);
   state.adjustCapTarget = teamId;
-  document.getElementById('adjustCapSub').textContent = `${team.name} · current cap ${fmt(team.cap)}`;
+  document.getElementById('adjustCapSub').textContent = `${team.name} · current budget ${fmt(team.cap)}`;
   document.getElementById('adjustCapInput').value = team.cap;
   openModal('overlayAdjustCap');
 }
@@ -1159,6 +1278,14 @@ function saveCap(){
   const team = state.teams.find(t=>t.id===state.adjustCapTarget);
   const num = parseFloat(document.getElementById('adjustCapInput').value);
   if(isNaN(num) || num<=0){ alert('Enter a valid amount.'); return; }
+  if(team.parentTeamId){
+    const parent = state.teams.find(p=>p.id===team.parentTeamId);
+    const siblingsTotal = state.teams.filter(s=>s.parentTeamId===team.parentTeamId && s.id!==team.id).reduce((s,x)=>s+x.cap,0);
+    if(siblingsTotal + num > parent.cap){
+      alert(`Cannot save: this would bring ${parent.name}'s sub-team budgets to ${fmt(siblingsTotal+num)}, which exceeds ${parent.name}'s total budget of ${fmt(parent.cap)}.`);
+      return;
+    }
+  }
   team.cap = num;
   closeModal('overlayAdjustCap');
   renderAll();
@@ -1177,7 +1304,8 @@ function openTransfer(teamId){
 
 document.getElementById('transferAmount').addEventListener('input', e=>{
   const note = document.getElementById('transferNote');
-  note.style.display = (parseFloat(e.target.value)||0) > state.threshold ? 'block' : 'none';
+  const team = state.teams.find(t=>t.id===state.transferTargetTeam);
+  note.style.display = (parseFloat(e.target.value)||0) > (team ? team.threshold : Infinity) ? 'block' : 'none';
 });
 
 function submitTransfer(){
@@ -1189,7 +1317,7 @@ function submitTransfer(){
   const remaining = team.cap - teamSpent(team.id);
   if(amount > remaining){ alert(`This exceeds ${team.name}'s remaining budget of ${fmt(remaining)}.`); return; }
 
-  if(amount > state.threshold){
+  if(amount > team.threshold){
     state.approvals.push({ id: state.nextApprovalId++, teamId, teamName: team.name, desc: recipient, amount, status:'pending', type:'transfer' });
   } else {
     state.transactions.unshift({ id: state.nextTxId++, teamId, teamName: team.name, desc: recipient, amount, status:'approved', date:'Today', dateISO: TODAY.toISOString().slice(0,10) });
@@ -1199,10 +1327,25 @@ function submitTransfer(){
 }
 
 function openNewTeamModal(){
+  document.getElementById('newTeamModalTitle').textContent = 'Create a team';
   const sel = document.getElementById('newTeamParent');
+  sel.disabled = false;
   const eligible = state.teams.filter(t => !t.parentTeamId);
   sel.innerHTML = '<option value="">None — top-level team</option>' +
     eligible.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  document.getElementById('newTeamName').value = '';
+  document.getElementById('newTeamCap').value = '';
+  document.getElementById('newTeamMembers').value = '';
+  openModal('overlayNewTeam');
+}
+
+function openNewSubTeamModal(parentTeamId){
+  const parent = state.teams.find(t=>t.id===parentTeamId);
+  document.getElementById('newTeamModalTitle').textContent = `Create a sub-team of ${parent.name}`;
+  const sel = document.getElementById('newTeamParent');
+  sel.innerHTML = `<option value="${parent.id}">${parent.name}</option>`;
+  sel.value = String(parent.id);
+  sel.disabled = true;
   document.getElementById('newTeamName').value = '';
   document.getElementById('newTeamCap').value = '';
   document.getElementById('newTeamMembers').value = '';
@@ -1215,14 +1358,30 @@ function createTeam(){
   const membersRaw = document.getElementById('newTeamMembers').value.trim();
   const parentRaw = document.getElementById('newTeamParent').value;
   if(!name || !cap || cap<=0){ alert('Enter a team name and a valid budget cap.'); return; }
-  const members = membersRaw ? membersRaw.split(',').map(s=>s.trim()).filter(Boolean) : ['Unassigned'];
   const parentTeamId = parentRaw ? Number(parentRaw) : null;
-  state.teams.push({ id: state.nextTeamId++, name, cap, members, parentTeamId });
+  let threshold = state.defaultThreshold;
+  if(parentTeamId){
+    const parent = state.teams.find(p=>p.id===parentTeamId);
+    const siblingsTotal = state.teams.filter(s=>s.parentTeamId===parentTeamId).reduce((s,x)=>s+x.cap,0);
+    if(siblingsTotal + cap > parent.cap){
+      alert(`Cannot save: this would bring ${parent.name}'s sub-team budgets to ${fmt(siblingsTotal+cap)}, which exceeds ${parent.name}'s total budget of ${fmt(parent.cap)}.`);
+      return;
+    }
+    threshold = Math.min(threshold, parent.threshold);
+  }
+  const members = membersRaw ? membersRaw.split(',').map(s=>s.trim()).filter(Boolean) : ['Unassigned'];
+  state.teams.push({ id: state.nextTeamId++, name, cap, members, parentTeamId, approverDelegate:'cfo', threshold });
   document.getElementById('newTeamName').value='';
   document.getElementById('newTeamCap').value='';
   document.getElementById('newTeamMembers').value='';
   closeModal('overlayNewTeam');
   renderAll();
+}
+
+function canDecideApproval(a){
+  if(isAdmin() || isCFO()) return true;
+  const team = state.teams.find(t=>t.id===a.teamId);
+  return !!team && team.approverDelegate==='lead' && currentTeamId()===a.teamId;
 }
 
 function renderApprovals(){
@@ -1243,7 +1402,7 @@ function renderApprovals(){
       <div class="r-amt">${a.type==='vendor' ? '—' : fmt(a.amount)}</div>
       <div class="r-status">
         ${a.status==='pending'
-          ? ((isAdmin() || isCFO())
+          ? (canDecideApproval(a)
             ? `<button class="btn small" style="margin-right:6px" onclick="decideApproval(${a.id}, true)">Approve</button>
                <button class="btn small danger" onclick="decideApproval(${a.id}, false)">Reject</button>`
             : `<span class="pill pending">Pending</span>`)
@@ -1719,20 +1878,25 @@ function renderAnalyticsSummary(){
 }
 
 function openSettings(){
-  document.getElementById('settingsThreshold').value = state.threshold;
+  document.getElementById('settingsThreshold').value = state.defaultThreshold;
   openModal('overlaySettings');
 }
 
 function saveSettings(){
   const val = parseFloat(document.getElementById('settingsThreshold').value);
   if(isNaN(val) || val<=0){ alert('Enter a valid threshold amount.'); return; }
-  state.threshold = val;
+  state.defaultThreshold = val;
   closeModal('overlaySettings');
   renderAll();
 }
 
 function startNewPeriod(){
+  openModal('overlayStartPeriod');
+}
+
+function confirmStartNewPeriod(){
   state.periodStart = new Date(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+  closeModal('overlayStartPeriod');
   renderAll();
   const note = document.getElementById('periodResetNote');
   note.classList.add('show');
@@ -1801,6 +1965,7 @@ function updateEmptyModeLinks(){
 }
 
 function renderAll(){
+  document.getElementById('companyName').textContent = state.companyName;
   renderViewAsOptions();
   applyRoleVisibility();
   updateEmptyModeLinks();
