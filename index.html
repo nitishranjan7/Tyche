@@ -704,7 +704,7 @@
           <button class="seg-btn" data-mode="month" onclick="setAnalyticsMode('month')">By month</button>
           <button class="seg-btn" data-mode="team" onclick="setAnalyticsMode('team')">By team</button>
         </div>
-        <select class="select-control" id="analyticsRange">
+        <select class="select-control" id="analyticsRange" onchange="setAnalyticsRange(this.value)">
           <option>Last 12 months</option>
           <option>Last 6 months</option>
           <option>Last 3 months</option>
@@ -893,6 +893,7 @@ function initialState(){ return {
     { id:3, nickname:"R. Osei — Marketing", type:"Employee", holders:1, spend:640, limit:2000, status:"Frozen", expiry:"11/26", teamId:1, lastChargeDate:"2026-07-10" },
   ],
   analyticsMode: "vendor",
+  analyticsRange: "Last 12 months",
   ledgerFilter: "all",
   search: { ledger:"", expenses:"", bills:"", vendors:"" },
   nextTeamId: 5,
@@ -1594,15 +1595,34 @@ function setAnalyticsMode(mode){
   renderAnalytics();
 }
 
+function setAnalyticsRange(range){
+  state.analyticsRange = range;
+  renderAnalytics();
+}
+
+function analyticsRangeCount(){
+  if(state.analyticsRange==='Last 6 months') return 6;
+  if(state.analyticsRange==='Last 3 months') return 3;
+  if(state.analyticsRange==='Year to date') return ANALYTICS_MONTHS.length - ANALYTICS_MONTHS.indexOf('Jan');
+  return ANALYTICS_MONTHS.length;
+}
+
+function analyticsActiveIndices(){
+  const n = analyticsRangeCount();
+  const start = ANALYTICS_MONTHS.length - n;
+  return Array.from({length:n}, (_,i)=>start+i);
+}
+
 function analyticsMonthlyTotals(){
-  return ANALYTICS_MONTHS.map((m,i)=>{
+  return analyticsActiveIndices().map(i=>{
     let total=0; ANALYTICS_VENDORS.forEach(v=>total += analyticsMonthlySpend(v,i));
     return total;
   });
 }
 function analyticsVendorTotals(){
+  const indices = analyticsActiveIndices();
   return ANALYTICS_VENDORS.map(v=>{
-    let total=0; for(let i=0;i<12;i++) total += analyticsMonthlySpend(v,i);
+    let total=0; indices.forEach(i=>total += analyticsMonthlySpend(v,i));
     return { name:v.name, value:total };
   });
 }
@@ -1613,6 +1633,7 @@ function analyticsTeamTotals(){
 function renderAnalytics(){
   const chart = document.getElementById('analyticsChart');
   const legend = document.getElementById('teamModeLegend');
+  document.getElementById('analyticsRange').value = state.analyticsRange;
 
   if(state.analyticsMode==='team'){
     legend.style.display = 'flex';
@@ -1644,7 +1665,9 @@ function renderAnalytics(){
     if(state.analyticsMode==='vendor'){
       bars = analyticsVendorTotals().map(v=>({label:v.name, value:v.value})).sort((a,b)=>b.value-a.value);
     } else {
-      bars = ANALYTICS_MONTHS.map((m,i)=>({label:m, value:analyticsMonthlyTotals()[i]}));
+      const indices = analyticsActiveIndices();
+      const totals = analyticsMonthlyTotals();
+      bars = indices.map((idx,pos)=>({label:ANALYTICS_MONTHS[idx], value:totals[pos]}));
     }
     const max = Math.max(...bars.map(b=>b.value), 1);
     chart.innerHTML = bars.map(b=>`
