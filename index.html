@@ -553,7 +553,7 @@
     <div class="tab" data-tab="analytics">Analytics</div>
     <div class="tab" data-tab="ledger">Ledger</div>
     <div class="rail-footer">
-      Fintech Beta Labs Ltd<br>Demo workspace · mock data
+      <span id="companyName">Tyche</span><br>Demo workspace · mock data
       <div style="margin-top:10px;">
         <a href="#" class="rail-link" id="emptyStateLink" onclick="startEmptyState();return false;">View empty state</a>
         <a href="#" class="rail-link" id="restoreDataLink" onclick="restoreDemoData();return false;" style="display:none;">Restore demo data</a>
@@ -837,6 +837,7 @@
 const TODAY = new Date(2026,6,19);
 
 function initialState(){ return {
+  companyName: "Tyche",
   totalBalance: 184320,
   threshold: 2000,
   periodStart: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1),
@@ -1806,6 +1807,7 @@ function updateEmptyModeLinks(){
 }
 
 function renderAll(){
+  document.getElementById('companyName').textContent = state.companyName;
   renderViewAsOptions();
   applyRoleVisibility();
   updateEmptyModeLinks();
