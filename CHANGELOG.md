@@ -22,6 +22,23 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `977edbd` — Visually nest sub-teams under their parent instead of equal-size siblings — revert to `c4ead4d`
+  `teamsGrid` now lays out parent(+children) "family" blocks
+  (`.team-family`) as its grid items instead of every team individually.
+  New `teamFamilyHTML()`/`subTeamCardHTML()` replace the old
+  `orderedTeamsForDisplay()` flat-list approach. Sub-teams render at
+  ~65-70% size (`.compact-sub`, smaller `.sub-dial`) in a `.sub-team-row`
+  connected to the parent by a left indent + thin line (`::before` tick),
+  replacing the old colored-left-border treatment (which is kept only for
+  the case where a sub-team renders alone with no visible parent, e.g. a
+  team lead viewing their own sub-team). Families with sub-teams span 2
+  grid columns so 2-3 compact cards fit in one row instead of stacking —
+  found via an in-browser test with 3 temporary sub-teams that a single-
+  column width only fit one compact card per line. Added a mobile
+  override (`grid-column:span 1`, column-direction sub-row) after that
+  same test revealed `span 2` overflowing the 375px breakpoint. Top-level
+  teams with no sub-teams are pixel-identical to before.
+
 - `755639b` — Use white text on solid blue buttons/chips for contrast — revert to `df0497c`
   `.btn.primary`, `.chip.active`, `.seg-btn.active` all had text hardcoded
   to `#1B1508` (a near-black tuned for the old gold background) — left
