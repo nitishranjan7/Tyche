@@ -22,6 +22,22 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `026c373` — Replace logomark and wordmark with final design handoff assets — revert to `d89c455`
+  Source: `Tyche Logo Concepts.zip` → `design_handoff_tyche_logo/` (mark +
+  lockup SVGs, README brief). Sidebar's inline pinwheel SVG replaced with
+  `tyche-logo-mark.svg`'s three-band staged-funnel mark (same footprint,
+  22x22px, so surrounding layout/spacing is untouched) — went with "mark +
+  live wordmark text" over the flattened lockup SVG since `<span>Tyche
+  </span>` was already live text, matching the README's explicit fallback
+  for that case. Favicon added as an inlined `data:image/svg+xml` copy of
+  the same mark (no separate asset file needed since the app is a single
+  self-contained HTML file). Per the brief's wordmark tokens, `.brand`
+  moved from Fraunces/600/positive-tracking to Space Grotesk/700/-0.02em/
+  `#1C2530` — Fraunces was only ever used here, so removed it from the
+  Google Fonts import too. Design tokens (gradient stops, neutral
+  surfaces) already matched the app's existing accent theme and mobile
+  breakpoint, so nothing else needed to change.
+
 - `c9b3df2` — Fix Analytics range dropdown not filtering data — revert to `776f367`
   `#analyticsRange` had no `onchange` handler and nothing ever read its
   value — purely decorative since it was first built. Added `state.
