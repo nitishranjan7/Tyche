@@ -22,6 +22,16 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `1b421ea` — Enlarge sidebar logomark and align it to the wordmark's cap-height — revert to `b3fa96b`
+  Logomark bumped 22px → 32px (too small at the original size). Switched
+  `.brand` from `align-items:center` to `flex-start` and gave the SVG a
+  4px `margin-top` so its top edge lines up with the top of the "T" in
+  "Tyche" — center-alignment was matching visual midpoints, not tops, and
+  flex-start alone still sat a couple px high since a text line box
+  includes ascender/leading space above the actual cap-height ink.
+  Verified by zooming the header 4x-8x in-browser rather than eyeballing
+  at normal size.
+
 - `026c373` — Replace logomark and wordmark with final design handoff assets — revert to `d89c455`
   Source: `Tyche Logo Concepts.zip` → `design_handoff_tyche_logo/` (mark +
   lockup SVGs, README brief). Sidebar's inline pinwheel SVG replaced with
