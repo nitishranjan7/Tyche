@@ -564,6 +564,7 @@
     <div class="rail-group-label">Insights</div>
     <div class="tab" data-tab="analytics">Analytics</div>
     <div class="tab" data-tab="ledger">Ledger</div>
+    <div class="tab" data-tab="approval-rights">Approval Rights</div>
     <div class="rail-footer">
       <span id="companyName">Tyche</span><br>Demo workspace · mock data
       <div style="margin-top:10px;">
@@ -626,6 +627,13 @@
         <input class="search-input" id="ledgerSearch" placeholder="Search recipient or description…" oninput="setSearch('ledger', this.value)">
       </div>
       <div class="row-list" id="ledgerList"></div>
+    </div>
+
+    <!-- APPROVAL RIGHTS -->
+    <div class="view" id="view-approval-rights">
+      <h1>Approval Rights</h1>
+      <p class="subhead">Who approves each team's transfers above their threshold, and what that threshold is. Read-only — edit from a team's card in Teams &amp; Budgets.</p>
+      <div class="row-list" id="approvalRightsList"></div>
     </div>
 
     <!-- EXPENSES -->
@@ -1469,6 +1477,31 @@ function ledgerRows(){
   return rows;
 }
 
+function renderApprovalRights(){
+  const list = document.getElementById('approvalRightsList');
+  if(state.teams.length===0){
+    list.innerHTML = `<div class="empty-state">No teams yet.</div>`;
+    return;
+  }
+  const topLevel = state.teams.filter(t=>!t.parentTeamId);
+  const rows = [];
+  topLevel.forEach(t=>{
+    rows.push(approvalRightsRowHTML(t, false));
+    state.teams.filter(s=>s.parentTeamId===t.id).forEach(s=>rows.push(approvalRightsRowHTML(s, true)));
+  });
+  list.innerHTML = rows.join('');
+}
+
+function approvalRightsRowHTML(t, isSub){
+  const approver = t.approverDelegate === 'lead' ? `${t.name} lead` : 'CFO';
+  return `
+    <div class="row">
+      <div class="r-team">${isSub ? '↳ ' : ''}${t.name}</div>
+      <div class="r-desc">${approver}</div>
+      <div class="r-amt">${fmt(t.threshold)}</div>
+    </div>`;
+}
+
 const RENDER_BY_SEARCH_KEY = { ledger:()=>renderLedger(), expenses:()=>renderExpenses(), bills:()=>renderBills(), vendors:()=>renderVendors() };
 function setSearch(key, value){ state.search[key] = value; RENDER_BY_SEARCH_KEY[key](); }
 
@@ -1914,6 +1947,7 @@ function applyRoleVisibility(){
   const adminOrCFO = admin || isCFO();
   document.querySelector('.tab[data-tab="vendors"]').style.display = adminOrCFO ? '' : 'none';
   document.querySelector('.tab[data-tab="analytics"]').style.display = adminOrCFO ? '' : 'none';
+  document.querySelector('.tab[data-tab="approval-rights"]').style.display = adminOrCFO ? '' : 'none';
   document.getElementById('railGroupPaymentsAdmin').style.display = adminOrCFO ? '' : 'none';
   document.getElementById('settingsBtn').style.display = admin ? '' : 'none';
   document.getElementById('periodControls').style.display = adminOrCFO ? '' : 'none';
@@ -1922,7 +1956,7 @@ function applyRoleVisibility(){
   document.getElementById('billsExportBtn').style.display = adminOrCFO ? '' : 'none';
   if(!adminOrCFO){
     const activeTab = document.querySelector('.tab.active')?.dataset.tab;
-    if(activeTab==='vendors' || activeTab==='analytics') switchTab('dashboard');
+    if(activeTab==='vendors' || activeTab==='analytics' || activeTab==='approval-rights') switchTab('dashboard');
   }
 }
 
@@ -1983,6 +2017,7 @@ function renderAll(){
   renderVendors();
   renderCards();
   renderAnalytics();
+  renderApprovalRights();
 }
 
 function attemptLogin(){
