@@ -22,6 +22,53 @@ git revert <commit>
 Each entry's "revert to" commit is the one immediately before it — i.e. the
 state you'd land on with `git reset --hard <revert-to>`.
 
+- `1331de8` — Merge remote-tracking branch 'origin/main'
+  `origin/main` had diverged with 4 commits from a separate Claude Code
+  session (Stefania's): a logo size bump + recolor to solid red on the
+  old pinwheel mark, a placeholder-company-name fix, and "P4.1" (per-team
+  approval delegation, per-team thresholds replacing the old global
+  setting, budget-permission gating, team renaming, sub-team creation
+  from a team lead's own detail view). Two hunks conflicted, both in the
+  sidebar `.brand` logo — `align-items`/`gap` and the `<svg>`/gradient —
+  resolved in favor of this session's new design-handoff mark (blue
+  gradient, 32px, cap-height aligned) per explicit instruction, discarding
+  the red recolor and size bump. Everything else auto-merged cleanly,
+  which checked out on inspection: `168646c` (this session's Teams &
+  Budgets list/detail restructuring) is an ancestor of Stefania's P4.1
+  commit, so her work was already built on top of the new list/detail
+  architecture rather than the old card grid — the per-team threshold/
+  approver-delegate UI and rename affordance landed inside `teamCardHTML`
+  (used as this session's detail-view content) coherently, not just
+  textually. Verified in-browser: no console errors, threshold/approver
+  save round-trips correctly, mobile unaffected, logo confirmed as the
+  new mark via computed styles (not just visually).
+
+- `1b421ea` — Enlarge sidebar logomark and align it to the wordmark's cap-height — revert to `b3fa96b`
+  Logomark bumped 22px → 32px (too small at the original size). Switched
+  `.brand` from `align-items:center` to `flex-start` and gave the SVG a
+  4px `margin-top` so its top edge lines up with the top of the "T" in
+  "Tyche" — center-alignment was matching visual midpoints, not tops, and
+  flex-start alone still sat a couple px high since a text line box
+  includes ascender/leading space above the actual cap-height ink.
+  Verified by zooming the header 4x-8x in-browser rather than eyeballing
+  at normal size.
+
+- `026c373` — Replace logomark and wordmark with final design handoff assets — revert to `d89c455`
+  Source: `Tyche Logo Concepts.zip` → `design_handoff_tyche_logo/` (mark +
+  lockup SVGs, README brief). Sidebar's inline pinwheel SVG replaced with
+  `tyche-logo-mark.svg`'s three-band staged-funnel mark (same footprint,
+  22x22px, so surrounding layout/spacing is untouched) — went with "mark +
+  live wordmark text" over the flattened lockup SVG since `<span>Tyche
+  </span>` was already live text, matching the README's explicit fallback
+  for that case. Favicon added as an inlined `data:image/svg+xml` copy of
+  the same mark (no separate asset file needed since the app is a single
+  self-contained HTML file). Per the brief's wordmark tokens, `.brand`
+  moved from Fraunces/600/positive-tracking to Space Grotesk/700/-0.02em/
+  `#1C2530` — Fraunces was only ever used here, so removed it from the
+  Google Fonts import too. Design tokens (gradient stops, neutral
+  surfaces) already matched the app's existing accent theme and mobile
+  breakpoint, so nothing else needed to change.
+
 - `c9b3df2` — Fix Analytics range dropdown not filtering data — revert to `776f367`
   `#analyticsRange` had no `onchange` handler and nothing ever read its
   value — purely decorative since it was first built. Added `state.
