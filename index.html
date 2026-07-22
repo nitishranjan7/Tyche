@@ -308,6 +308,7 @@
   .row:last-child{border-bottom:none;}
   .row .r-team{width:110px;font-weight:600;flex-shrink:0;}
   .row .r-desc{flex:1;color:var(--text-dim);}
+  .rejection-reason{font-size:11px;color:var(--rust-text);margin-top:3px;white-space:pre-wrap;}
   .row .r-amt{font-family:'IBM Plex Mono',monospace;font-weight:600;width:100px;text-align:right;flex-shrink:0;}
   .row .r-status{width:150px;flex-shrink:0;text-align:right;}
   .pill{
@@ -324,6 +325,7 @@
   }
   .type-tag.vendor{background:rgba(125,160,138,.18);color:var(--sage-text);}
   .type-tag.transfer{background:rgba(201,154,63,.18);color:var(--brass-text);}
+  .type-tag.budget{background:rgba(193,96,74,.18);color:var(--rust-text);}
 
   /* ---- Stat callout (single big figure + caption) ---- */
   .stat-callout{
@@ -427,11 +429,12 @@
   .modal .modal-sub{font-size:12.5px;color:var(--text-dim);margin-bottom:18px;}
   .field{margin-bottom:14px;}
   .field label{display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
-  .field input,.field select{
+  .field input,.field select,.field textarea{
     width:100%;padding:9px 11px;border-radius:6px;border:1px solid var(--line);
     background:var(--ink);color:var(--text-light);font-size:13.5px;font-family:'Inter',sans-serif;
   }
-  .field input:focus,.field select:focus{outline:none;border-color:var(--brass);}
+  .field textarea{resize:vertical;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--brass);}
   .field input:disabled,.field select:disabled{opacity:.55;cursor:not-allowed;background:var(--paper-dim);}
   .modal-note{font-size:11.5px;color:var(--brass-text);background:rgba(201,154,63,.1);padding:8px 10px;border-radius:6px;margin-bottom:14px;display:none;}
   .modal-note.error{color:var(--rust-text);background:rgba(193,96,74,.1);}
@@ -808,6 +811,33 @@
   </div>
 </div>
 
+<!-- Modal: reject approval -->
+<div class="overlay" id="overlayRejectApproval">
+  <div class="modal">
+    <h3>Reject request</h3>
+    <p class="modal-sub" id="rejectApprovalSub"></p>
+    <div class="field"><label>Reason</label><textarea id="rejectApprovalReason" rows="3" placeholder="Why is this being rejected?"></textarea></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayRejectApproval')">Cancel</button>
+      <button class="btn primary" onclick="submitRejection()">Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: propose budget -->
+<div class="overlay" id="overlayProposeBudget">
+  <div class="modal">
+    <h3>Propose new budget</h3>
+    <p class="modal-sub" id="proposeBudgetSub"></p>
+    <div class="field"><label>Proposed new budget</label><input id="proposeBudgetInput" type="number" placeholder="5000"></div>
+    <div class="modal-note" style="display:block;">This won't take effect until approved. It'll appear in Approvals as a Budget change request.</div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayProposeBudget')">Cancel</button>
+      <button class="btn primary" onclick="submitBudgetProposal()">Submit for approval</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: adjust cap -->
 <div class="overlay" id="overlayAdjustCap">
   <div class="modal">
@@ -944,6 +974,8 @@ function initialState(){ return {
   transferTargetTeam: null,
   adjustCapTarget: null,
   renameTeamTarget: null,
+  proposeBudgetTarget: null,
+  rejectApprovalTarget: null,
   currentView: "admin",
   emptyMode: false,
   teamsExpanded: new Set(),
@@ -954,6 +986,7 @@ let state = initialState();
 
 const fmt = n => '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
 const fmtDate = iso => new Date(iso+'T00:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric'});
+const escapeHtml = str => str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
@@ -1035,13 +1068,13 @@ function teamCardHTML(t){
         <button class="btn" onclick="openTransfer(${t.id})">Transfer</button>
         ${canManageTeamSettings(t)
           ? `<button class="btn primary" onclick="adjustCap(${t.id})">Set Budget</button>`
-          : `<button class="btn primary" disabled title="${parent ? `Only Admin, CFO, or the ${parent.name} lead can manage this team's budget and approval settings.` : 'Only Admin or CFO can manage this team\'s budget and approval settings.'}">Set Budget</button>`}
+          : `<button class="btn primary" onclick="openProposeBudget(${t.id})">Propose new budget</button>`}
       </div>
-      ${!canManageTeamSettings(t) ? `<div class="budget-disabled-note">${parent ? `Only Admin, CFO, or the ${parent.name} lead can manage this team's budget and approval settings.` : 'Only Admin or CFO can manage this team\'s budget and approval settings.'}</div>` : ''}
       <div class="field team-approver-field">
         <label>Approval threshold (per transfer)</label>
         <input type="number" id="thresholdInput-${t.id}" value="${t.threshold}" ${canManageTeamSettings(t) ? '' : 'disabled'}>
       </div>
+      ${!canManageTeamSettings(t) ? `<div class="budget-disabled-note">${parent ? `Only Admin, CFO, or the ${parent.name} lead can set this team's threshold directly.` : 'Only Admin or CFO can set this team\'s threshold directly.'}</div>` : ''}
       ${canManageTeamSettings(t) ? `
       <div class="field team-approver-field">
         <label>Who approves transfers above this threshold?</label>
@@ -1299,6 +1332,31 @@ function saveCap(){
   renderAll();
 }
 
+function openProposeBudget(teamId){
+  const team = state.teams.find(t=>t.id===teamId);
+  state.proposeBudgetTarget = teamId;
+  document.getElementById('proposeBudgetSub').textContent = `${team.name} · current budget ${fmt(team.cap)}`;
+  document.getElementById('proposeBudgetInput').value = team.cap;
+  openModal('overlayProposeBudget');
+}
+
+function submitBudgetProposal(){
+  const team = state.teams.find(t=>t.id===state.proposeBudgetTarget);
+  const num = parseFloat(document.getElementById('proposeBudgetInput').value);
+  if(isNaN(num) || num<=0){ alert('Enter a valid amount.'); return; }
+  if(team.parentTeamId){
+    const parent = state.teams.find(p=>p.id===team.parentTeamId);
+    const siblingsTotal = state.teams.filter(s=>s.parentTeamId===team.parentTeamId && s.id!==team.id).reduce((s,x)=>s+x.cap,0);
+    if(siblingsTotal + num > parent.cap){
+      alert(`Cannot submit: this would bring ${parent.name}'s sub-team budgets to ${fmt(siblingsTotal+num)}, which exceeds ${parent.name}'s total budget of ${fmt(parent.cap)}.`);
+      return;
+    }
+  }
+  state.approvals.push({ id: state.nextApprovalId++, teamId: team.id, teamName: team.name, desc: `Budget ${fmt(team.cap)} → ${fmt(num)}`, amount: num, status:'pending', type:'budget' });
+  closeModal('overlayProposeBudget');
+  renderAll();
+}
+
 function openTransfer(teamId){
   const team = state.teams.find(t=>t.id===teamId);
   state.transferTargetTeam = teamId;
@@ -1387,13 +1445,15 @@ function createTeam(){
 }
 
 function canDecideApproval(a){
-  if(isAdmin() || isCFO()) return true;
   const team = state.teams.find(t=>t.id===a.teamId);
-  return !!team && team.approverDelegate==='lead' && currentTeamId()===a.teamId;
+  if(!team) return false;
+  if(a.type === 'budget') return canManageTeamSettings(team);
+  if(isAdmin() || isCFO()) return true;
+  return team.approverDelegate==='lead' && currentTeamId()===a.teamId;
 }
 
 function renderApprovals(){
-  const scoped = (isAdmin() || isCFO()) ? state.approvals : state.approvals.filter(a=>a.teamId===currentTeamId());
+  const scoped = (isAdmin() || isCFO()) ? state.approvals : state.approvals.filter(a=>a.teamId===currentTeamId() || canDecideApproval(a));
   const pending = scoped.filter(a=>a.status==='pending');
   document.getElementById('approvalBadge').textContent = pending.length || '';
   document.getElementById('approvalBadge').style.display = pending.length ? 'inline-block' : 'none';
@@ -1406,13 +1466,16 @@ function renderApprovals(){
   list.innerHTML = scoped.slice().reverse().map(a=>`
     <div class="row">
       <div class="r-team">${a.teamName}</div>
-      <div class="r-desc"><span class="type-tag ${a.type}">${a.type==='vendor'?'Vendor':'Transfer'}</span>${a.desc}</div>
+      <div class="r-desc">
+        <span class="type-tag ${a.type}">${a.type==='vendor'?'Vendor':a.type==='budget'?'Budget change':'Transfer'}</span>${a.desc}
+        ${a.status==='rejected' && a.rejectionReason ? `<div class="rejection-reason">Rejected: ${escapeHtml(a.rejectionReason)}</div>` : ''}
+      </div>
       <div class="r-amt">${a.type==='vendor' ? '—' : fmt(a.amount)}</div>
       <div class="r-status">
         ${a.status==='pending'
           ? (canDecideApproval(a)
             ? `<button class="btn small" style="margin-right:6px" onclick="decideApproval(${a.id}, true)">Approve</button>
-               <button class="btn small danger" onclick="decideApproval(${a.id}, false)">Reject</button>`
+               <button class="btn small danger" onclick="openRejectApproval(${a.id})">Reject</button>`
             : `<span class="pill pending">Pending</span>`)
           : `<span class="pill ${a.status}">${a.status}</span>`}
       </div>
@@ -1420,12 +1483,33 @@ function renderApprovals(){
   `).join('');
 }
 
-function decideApproval(id, approve){
+function openRejectApproval(id){
+  const a = state.approvals.find(x=>x.id===id);
+  state.rejectApprovalTarget = id;
+  document.getElementById('rejectApprovalSub').textContent = `${a.teamName} · ${a.desc}`;
+  document.getElementById('rejectApprovalReason').value = '';
+  openModal('overlayRejectApproval');
+}
+
+function submitRejection(){
+  const reason = document.getElementById('rejectApprovalReason').value.trim();
+  if(!reason){ alert('Enter a reason for rejecting this request.'); return; }
+  closeModal('overlayRejectApproval');
+  decideApproval(state.rejectApprovalTarget, false, reason);
+}
+
+function decideApproval(id, approve, reason){
   const a = state.approvals.find(x=>x.id===id);
   a.status = approve ? 'approved' : 'rejected';
+  if(!approve && reason) a.rejectionReason = reason;
   if(a.type === 'vendor'){
     const vendor = state.vendors.find(v=>v.id===a.vendorId);
     if(vendor) vendor.status = approve ? 'Active' : 'Rejected';
+  } else if(a.type === 'budget'){
+    if(approve){
+      const team = state.teams.find(t=>t.id===a.teamId);
+      if(team) team.cap = a.amount;
+    }
   } else if(approve){
     state.transactions.unshift({ id: state.nextTxId++, teamId:a.teamId, teamName:a.teamName, desc:a.desc, amount:a.amount, status:'approved', date:'Today', dateISO: TODAY.toISOString().slice(0,10) });
   }
