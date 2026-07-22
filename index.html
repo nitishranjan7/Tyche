@@ -571,16 +571,15 @@
     <div class="tab" data-tab="card-payments">Card Payments</div>
     <div class="tab" data-tab="bank-transfers">Bank Transfers</div>
     <div class="tab" data-tab="bills">Bills</div>
+    <div class="tab" data-tab="vendors">Vendors</div>
 
     <div class="rail-group-label">Budgets</div>
     <div class="tab" data-tab="teams">Teams & Budgets</div>
 
     <div class="rail-group-label">Spend</div>
     <div class="tab" data-tab="expenses">Expenses</div>
+    <div class="tab" data-tab="reimbursements">Reimbursements</div>
     <div class="tab" data-tab="cards">Cards</div>
-
-    <div class="rail-group-label" id="railGroupPaymentsAdmin">Payments Admin</div>
-    <div class="tab" data-tab="vendors">Vendors</div>
 
     <div class="rail-group-label">Insights</div>
     <div class="tab" data-tab="analytics">Analytics</div>
@@ -671,6 +670,17 @@
       <div class="row-list" id="expensesList"></div>
     </div>
 
+    <!-- REIMBURSEMENTS -->
+    <div class="view" id="view-reimbursements">
+      <h1>Reimbursements</h1>
+      <p class="subhead">Employee reimbursement requests, by team.</p>
+      <div class="list-toolbar" style="justify-content:flex-end;">
+        <input class="search-input" id="reimbursementsSearch" placeholder="Search employee or description…" oninput="setSearch('reimbursements', this.value)">
+      </div>
+      <div class="row-list" id="reimbursementsList"></div>
+      <div class="task-add-row" onclick="openNewReimbursement()">+ Request reimbursement</div>
+    </div>
+
     <!-- BILLS -->
     <div class="view" id="view-bills">
       <div class="view-header-row">
@@ -724,6 +734,7 @@
         <input class="search-input" id="vendorsSearch" placeholder="Search name or owner…" oninput="setSearch('vendors', this.value)">
       </div>
       <div class="row-list" id="vendorsList"></div>
+      <div class="add-card-tile" onclick="openAddVendor()">+ Add vendor</div>
     </div>
 
     <!-- CARDS -->
@@ -1008,7 +1019,7 @@ function initialState(){ return {
   analyticsMode: "vendor",
   analyticsRange: "Last 12 months",
   ledgerFilter: "all",
-  search: { ledger:"", expenses:"", bills:"", vendors:"" },
+  search: { ledger:"", expenses:"", bills:"", vendors:"", reimbursements:"" },
   nextTeamId: 5,
   nextTxId: 5,
   nextApprovalId: 102,
@@ -1519,8 +1530,9 @@ function taskSectionData(key){
     return { items, pendingCount: items.length };
   }
   if(key==='reimbursement'){
-    const items = adminOrCFO ? state.reimbursements : state.reimbursements.filter(r=>r.teamId===currentTeamId());
-    return { items, pendingCount: items.filter(r=>r.status==='Pending').length };
+    let items = state.reimbursements.filter(r=>r.status==='Pending');
+    if(!adminOrCFO) items = items.filter(r=>r.teamId===currentTeamId());
+    return { items, pendingCount: items.length };
   }
   if(key==='bill'){
     let items = state.bills.filter(b=>b.status==='For approval');
@@ -1757,7 +1769,7 @@ function approvalRightsRowHTML(t, isSub){
     </div>`;
 }
 
-const RENDER_BY_SEARCH_KEY = { ledger:()=>renderLedger(), expenses:()=>renderExpenses(), bills:()=>renderBills(), vendors:()=>renderVendors() };
+const RENDER_BY_SEARCH_KEY = { ledger:()=>renderLedger(), expenses:()=>renderExpenses(), bills:()=>renderBills(), vendors:()=>renderVendors(), reimbursements:()=>renderReimbursements() };
 function setSearch(key, value){ state.search[key] = value; RENDER_BY_SEARCH_KEY[key](); }
 
 function downloadCSV(filename, headers, rows){
@@ -1811,6 +1823,24 @@ function renderExpenses(){
       </div>
     </div>
   `).join('');
+}
+
+function renderReimbursements(){
+  const adminOrCFO = isAdmin() || isCFO();
+  let data = adminOrCFO ? state.reimbursements : state.reimbursements.filter(r=>r.teamId===currentTeamId());
+  const q = state.search.reimbursements.trim().toLowerCase();
+  if(q) data = data.filter(r=> r.employee.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q));
+
+  const list = document.getElementById('reimbursementsList');
+  if(data.length===0){
+    list.innerHTML = `<div class="empty-state">${q ? 'No reimbursements match your search.' : 'No reimbursement requests yet.'}</div>`;
+    return;
+  }
+  list.innerHTML = data.map(r=>{
+    const canDecide = adminOrCFO || currentTeamId()===r.teamId;
+    return taskRowHTML(`${r.employee} · ${r.teamName}`, `${r.desc} · ${r.date}`, fmt(r.amount), r.status==='Pending', r.status, canDecide,
+      `decideReimbursement(${r.id}, true)`, `openRejectApproval('reimbursement', ${r.id})`, r.rejectionReason);
+  }).join('');
 }
 
 const BILL_STATUSES = ['For submission','For approval','For payment','Sent for payment','Paid'];
@@ -2203,7 +2233,6 @@ function applyRoleVisibility(){
   document.querySelector('.tab[data-tab="vendors"]').style.display = adminOrCFO ? '' : 'none';
   document.querySelector('.tab[data-tab="analytics"]').style.display = adminOrCFO ? '' : 'none';
   document.querySelector('.tab[data-tab="approval-rights"]').style.display = adminOrCFO ? '' : 'none';
-  document.getElementById('railGroupPaymentsAdmin').style.display = adminOrCFO ? '' : 'none';
   document.getElementById('settingsBtn').style.display = admin ? '' : 'none';
   document.getElementById('periodControls').style.display = adminOrCFO ? '' : 'none';
   document.getElementById('addCardTile').style.display = adminOrCFO ? '' : 'none';
@@ -2242,7 +2271,7 @@ function startEmptyState(){
   state.currentView = 'admin';
   state.ledgerFilter = 'all';
   state.billFilter = 'All';
-  state.search = { ledger:"", expenses:"", bills:"", vendors:"" };
+  state.search = { ledger:"", expenses:"", bills:"", vendors:"", reimbursements:"" };
   state.emptyMode = true;
   state.teamsExpanded = new Set();
   state.teamsDetailId = null;
@@ -2270,6 +2299,7 @@ function renderAll(){
   renderTasks();
   renderLedger();
   renderExpenses();
+  renderReimbursements();
   renderBills();
   renderVendors();
   renderCards();
