@@ -309,6 +309,29 @@
   .row .r-team{width:110px;font-weight:600;flex-shrink:0;}
   .row .r-desc{flex:1;color:var(--text-dim);}
   .rejection-reason{font-size:11px;color:var(--rust-text);margin-top:3px;white-space:pre-wrap;}
+
+  /* Tasks page: collapsible sections */
+  .task-section{margin-bottom:24px;}
+  .task-section-header{
+    display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14.5px;margin-bottom:10px;
+  }
+  .task-count-badge{
+    background:var(--rust);color:#fff;font-size:11px;font-weight:600;
+    padding:1px 7px;border-radius:20px;line-height:1.6;flex-shrink:0;
+  }
+  .task-section-header .task-chevron{margin-left:auto;color:var(--text-dim);font-size:11px;}
+  .task-show-all{
+    text-align:center;padding:10px;font-size:12px;color:var(--brass-text);
+    cursor:pointer;border:1px solid var(--line);border-top:none;border-radius:0 0 6px 6px;
+  }
+  .task-show-all:hover{background:var(--ink-3);}
+  .task-add-row{
+    margin-top:8px;padding:12px 20px;border:1.5px dashed var(--line);border-radius:6px;
+    text-align:center;color:var(--text-dim);font-size:13px;cursor:pointer;
+    transition:border-color .15s ease,color .15s ease;
+  }
+  .task-add-row:hover{border-color:var(--brass);color:var(--brass-text);}
   .row .r-amt{font-family:'IBM Plex Mono',monospace;font-weight:600;width:100px;text-align:right;flex-shrink:0;}
   .row .r-status{width:150px;flex-shrink:0;text-align:right;}
   .pill{
@@ -542,7 +565,7 @@
     </div>
     <div class="rail-group-label">Overview</div>
     <div class="tab active" data-tab="dashboard">Dashboard</div>
-    <div class="tab" data-tab="approvals">Approvals <span class="badge" id="approvalBadge"></span></div>
+    <div class="tab" data-tab="approvals">Tasks <span class="badge" id="approvalBadge"></span></div>
 
     <div class="rail-group-label">Payments</div>
     <div class="tab" data-tab="card-payments">Card Payments</div>
@@ -604,11 +627,11 @@
       <div id="teamsContainer"></div>
     </div>
 
-    <!-- APPROVALS -->
+    <!-- TASKS -->
     <div class="view" id="view-approvals">
-      <h1>Approvals</h1>
-      <p class="subhead">Transfers a team requested above their auto-approve threshold.</p>
-      <div class="row-list" id="approvalsList"></div>
+      <h1>Tasks</h1>
+      <p class="subhead">Everything waiting on your review, grouped by type.</p>
+      <div id="tasksContainer"></div>
     </div>
 
     <!-- LEDGER -->
@@ -811,6 +834,21 @@
   </div>
 </div>
 
+<!-- Modal: request reimbursement -->
+<div class="overlay" id="overlayNewReimbursement">
+  <div class="modal">
+    <h3>Request reimbursement</h3>
+    <div class="field"><label>Employee</label><input id="newReimbEmployee" placeholder="e.g. R. Osei"></div>
+    <div class="field"><label>Description</label><input id="newReimbDesc" placeholder="e.g. Client dinner"></div>
+    <div class="field"><label>Amount</label><input id="newReimbAmount" type="number" placeholder="0.00"></div>
+    <div class="field" id="newReimbTeamField"><label>Team</label><select id="newReimbTeam"></select></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal('overlayNewReimbursement')">Cancel</button>
+      <button class="btn primary" onclick="submitReimbursement()">Submit</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: reject approval -->
 <div class="overlay" id="overlayRejectApproval">
   <div class="modal">
@@ -962,6 +1000,11 @@ function initialState(){ return {
     { id:2, nickname:"Engineering Cloud", type:"Company", holders:3, spend:9800, limit:10000, status:"Active", expiry:"03/28", teamId:2, lastChargeDate:"2026-07-17" },
     { id:3, nickname:"R. Osei — Marketing", type:"Employee", holders:1, spend:640, limit:2000, status:"Frozen", expiry:"11/26", teamId:1, lastChargeDate:"2026-07-10" },
   ],
+  reimbursements: [
+    { id:1, teamId:1, teamName:"Marketing", employee:"R. Osei", desc:"Client dinner — Q3 kickoff", amount:186, status:"Pending", date:"Jul 18", dateISO:"2026-07-18" },
+    { id:2, teamId:2, teamName:"Engineering", employee:"T. Idowu", desc:"Conference travel — taxi", amount:64, status:"Pending", date:"Jul 17", dateISO:"2026-07-17" },
+    { id:3, teamId:3, teamName:"Ops", employee:"J. Marsh", desc:"Office supplies", amount:42, status:"Approved", date:"Jul 10", dateISO:"2026-07-10" },
+  ],
   analyticsMode: "vendor",
   analyticsRange: "Last 12 months",
   ledgerFilter: "all",
@@ -971,6 +1014,7 @@ function initialState(){ return {
   nextApprovalId: 102,
   nextCardId: 4,
   nextVendorId: 10,
+  nextReimbursementId: 4,
   transferTargetTeam: null,
   adjustCapTarget: null,
   renameTeamTarget: null,
@@ -979,7 +1023,8 @@ function initialState(){ return {
   currentView: "admin",
   emptyMode: false,
   teamsExpanded: new Set(),
-  teamsDetailId: null
+  teamsDetailId: null,
+  taskSectionsExpanded: new Set()
 }; }
 
 let state = initialState();
@@ -1452,41 +1497,127 @@ function canDecideApproval(a){
   return team.approverDelegate==='lead' && currentTeamId()===a.teamId;
 }
 
-function renderApprovals(){
-  const scoped = (isAdmin() || isCFO()) ? state.approvals : state.approvals.filter(a=>a.teamId===currentTeamId() || canDecideApproval(a));
-  const pending = scoped.filter(a=>a.status==='pending');
-  document.getElementById('approvalBadge').textContent = pending.length || '';
-  document.getElementById('approvalBadge').style.display = pending.length ? 'inline-block' : 'none';
+const TASK_SECTIONS = [
+  { key:'budget', label:'Budgets' },
+  { key:'transfer', label:'Transfers' },
+  { key:'expense', label:'Card Expenses' },
+  { key:'reimbursement', label:'Reimbursements' },
+  { key:'bill', label:'Bills' },
+  { key:'vendor', label:'Vendors' },
+];
 
-  const list = document.getElementById('approvalsList');
-  if(scoped.length===0){
-    list.innerHTML = `<div class="empty-state">No approval requests yet.</div>`;
-    return;
+function taskSectionData(key){
+  const adminOrCFO = isAdmin() || isCFO();
+  if(key==='budget' || key==='transfer' || key==='vendor'){
+    let items = state.approvals.filter(a=>a.type===key);
+    if(!adminOrCFO) items = items.filter(a=>a.teamId===currentTeamId() || canDecideApproval(a));
+    return { items: items.slice().reverse(), pendingCount: items.filter(a=>a.status==='pending').length };
   }
-  list.innerHTML = scoped.slice().reverse().map(a=>`
-    <div class="row">
-      <div class="r-team">${a.teamName}</div>
-      <div class="r-desc">
-        <span class="type-tag ${a.type}">${a.type==='vendor'?'Vendor':a.type==='budget'?'Budget change':'Transfer'}</span>${a.desc}
-        ${a.status==='rejected' && a.rejectionReason ? `<div class="rejection-reason">Rejected: ${escapeHtml(a.rejectionReason)}</div>` : ''}
-      </div>
-      <div class="r-amt">${a.type==='vendor' ? '—' : fmt(a.amount)}</div>
-      <div class="r-status">
-        ${a.status==='pending'
-          ? (canDecideApproval(a)
-            ? `<button class="btn small" style="margin-right:6px" onclick="decideApproval(${a.id}, true)">Approve</button>
-               <button class="btn small danger" onclick="openRejectApproval(${a.id})">Reject</button>`
-            : `<span class="pill pending">Pending</span>`)
-          : `<span class="pill ${a.status}">${a.status}</span>`}
-      </div>
-    </div>
-  `).join('');
+  if(key==='expense'){
+    let items = state.expenses.filter(e=>e.status==='Pending');
+    if(!adminOrCFO) items = items.filter(e=>e.teamId===currentTeamId());
+    return { items, pendingCount: items.length };
+  }
+  if(key==='reimbursement'){
+    const items = adminOrCFO ? state.reimbursements : state.reimbursements.filter(r=>r.teamId===currentTeamId());
+    return { items, pendingCount: items.filter(r=>r.status==='Pending').length };
+  }
+  if(key==='bill'){
+    let items = state.bills.filter(b=>b.status==='For approval');
+    if(!adminOrCFO) items = items.filter(b=>b.teamId===currentTeamId());
+    return { items, pendingCount: items.length };
+  }
 }
 
-function openRejectApproval(id){
-  const a = state.approvals.find(x=>x.id===id);
-  state.rejectApprovalTarget = id;
-  document.getElementById('rejectApprovalSub').textContent = `${a.teamName} · ${a.desc}`;
+function taskRowHTML(team, desc, amount, pending, statusLabel, canDecide, approveOnclick, rejectOnclick, rejectionReason){
+  const statusLower = statusLabel.toLowerCase();
+  return `
+    <div class="row">
+      <div class="r-team">${team}</div>
+      <div class="r-desc">${desc}${statusLower==='rejected' && rejectionReason ? `<div class="rejection-reason">Rejected: ${escapeHtml(rejectionReason)}</div>` : ''}</div>
+      <div class="r-amt">${amount}</div>
+      <div class="r-status">
+        ${pending
+          ? (canDecide
+            ? `<button class="btn small"${rejectOnclick ? ' style="margin-right:6px"' : ''} onclick="${approveOnclick}">Approve</button>
+               ${rejectOnclick ? `<button class="btn small danger" onclick="${rejectOnclick}">Reject</button>` : ''}`
+            : `<span class="pill pending">Pending</span>`)
+          : `<span class="pill ${statusLower}">${statusLabel}</span>`}
+      </div>
+    </div>`;
+}
+
+function taskItemRowHTML(key, item){
+  if(key==='budget' || key==='transfer' || key==='vendor'){
+    const a = item;
+    const typeLabel = key==='vendor'?'Vendor':key==='budget'?'Budget change':'Transfer';
+    const desc = `<span class="type-tag ${a.type}">${typeLabel}</span>${a.desc}`;
+    const amount = a.type==='vendor' ? '—' : fmt(a.amount);
+    return taskRowHTML(a.teamName, desc, amount, a.status==='pending', a.status, canDecideApproval(a),
+      `decideApproval(${a.id}, true)`, `openRejectApproval('approval', ${a.id})`, a.rejectionReason);
+  }
+  if(key==='expense'){
+    const e = item;
+    const canDecide = isAdmin() || isCFO() || currentTeamId()===e.teamId;
+    return taskRowHTML(teamName(e.teamId), `${e.merchant} · ${e.date}`, fmt(e.amount), e.status==='Pending', e.status, canDecide,
+      `decideExpense(${e.id}, true)`, `openRejectApproval('expense', ${e.id})`, e.rejectionReason);
+  }
+  if(key==='reimbursement'){
+    const r = item;
+    const canDecide = isAdmin() || isCFO() || currentTeamId()===r.teamId;
+    return taskRowHTML(r.teamName, `${r.employee} · ${r.desc}`, fmt(r.amount), r.status==='Pending', r.status, canDecide,
+      `decideReimbursement(${r.id}, true)`, `openRejectApproval('reimbursement', ${r.id})`, r.rejectionReason);
+  }
+  if(key==='bill'){
+    const b = item;
+    const canDecide = isAdmin() || isCFO() || currentTeamId()===b.teamId;
+    return taskRowHTML(teamName(b.teamId), `${b.vendor} — ${b.desc}`, fmt(b.amount), true, b.status, canDecide,
+      `advanceBillStatus(${b.id})`, null, null);
+  }
+}
+
+function renderTasks(){
+  const container = document.getElementById('tasksContainer');
+  let totalPending = 0;
+  const sectionsHTML = TASK_SECTIONS.map(({key, label})=>{
+    const { items, pendingCount } = taskSectionData(key);
+    totalPending += pendingCount;
+    if(items.length===0) return '';
+    const expanded = state.taskSectionsExpanded.has(key);
+    const shown = expanded ? items : items.slice(0,5);
+    return `
+      <div class="task-section">
+        <div class="task-section-header" onclick="toggleTaskSection('${key}')">
+          ${pendingCount ? `<span class="task-count-badge">${pendingCount}</span>` : ''}
+          ${label}
+          <span class="task-chevron">${expanded ? '▾' : '▸'}</span>
+        </div>
+        <div class="row-list">${shown.map(item=>taskItemRowHTML(key, item)).join('')}</div>
+        ${key==='reimbursement' ? `<div class="task-add-row" onclick="openNewReimbursement()">+ Request reimbursement</div>` : ''}
+        ${items.length > 5 ? `<div class="task-show-all" onclick="toggleTaskSection('${key}')">${expanded ? 'Show less' : `Show all ${items.length}`}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  container.innerHTML = sectionsHTML || `<div class="empty-state">No tasks right now — you're all caught up.</div>
+    <div class="task-add-row" onclick="openNewReimbursement()">+ Request reimbursement</div>`;
+
+  document.getElementById('approvalBadge').textContent = totalPending || '';
+  document.getElementById('approvalBadge').style.display = totalPending ? 'inline-block' : 'none';
+}
+
+function toggleTaskSection(key){
+  if(state.taskSectionsExpanded.has(key)) state.taskSectionsExpanded.delete(key);
+  else state.taskSectionsExpanded.add(key);
+  renderTasks();
+}
+
+function openRejectApproval(kind, id){
+  state.rejectApprovalTarget = { kind, id };
+  let sub = '';
+  if(kind==='approval'){ const a = state.approvals.find(x=>x.id===id); sub = `${a.teamName} · ${a.desc}`; }
+  else if(kind==='expense'){ const e = state.expenses.find(x=>x.id===id); sub = `${teamName(e.teamId)} · ${e.merchant} · ${fmt(e.amount)}`; }
+  else if(kind==='reimbursement'){ const r = state.reimbursements.find(x=>x.id===id); sub = `${r.teamName} · ${r.employee} · ${r.desc}`; }
+  document.getElementById('rejectApprovalSub').textContent = sub;
   document.getElementById('rejectApprovalReason').value = '';
   openModal('overlayRejectApproval');
 }
@@ -1495,7 +1626,52 @@ function submitRejection(){
   const reason = document.getElementById('rejectApprovalReason').value.trim();
   if(!reason){ alert('Enter a reason for rejecting this request.'); return; }
   closeModal('overlayRejectApproval');
-  decideApproval(state.rejectApprovalTarget, false, reason);
+  const { kind, id } = state.rejectApprovalTarget;
+  if(kind==='approval') decideApproval(id, false, reason);
+  else if(kind==='expense') decideExpense(id, false, reason);
+  else if(kind==='reimbursement') decideReimbursement(id, false, reason);
+}
+
+function decideExpense(id, approve, reason){
+  const e = state.expenses.find(x=>x.id===id);
+  e.status = approve ? 'Approved' : 'Rejected';
+  if(!approve && reason) e.rejectionReason = reason;
+  renderAll();
+}
+
+function decideReimbursement(id, approve, reason){
+  const r = state.reimbursements.find(x=>x.id===id);
+  r.status = approve ? 'Approved' : 'Rejected';
+  if(!approve && reason) r.rejectionReason = reason;
+  renderAll();
+}
+
+function openNewReimbursement(){
+  const adminOrCFO = isAdmin() || isCFO();
+  document.getElementById('newReimbEmployee').value = '';
+  document.getElementById('newReimbDesc').value = '';
+  document.getElementById('newReimbAmount').value = '';
+  const teamField = document.getElementById('newReimbTeamField');
+  if(adminOrCFO){
+    teamField.style.display = '';
+    document.getElementById('newReimbTeam').innerHTML = state.teams.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  } else {
+    teamField.style.display = 'none';
+  }
+  openModal('overlayNewReimbursement');
+}
+
+function submitReimbursement(){
+  const employee = document.getElementById('newReimbEmployee').value.trim();
+  const desc = document.getElementById('newReimbDesc').value.trim();
+  const amount = parseFloat(document.getElementById('newReimbAmount').value);
+  if(!employee || !desc || !amount || amount<=0){ alert('Fill in employee, description, and a valid amount.'); return; }
+  const adminOrCFO = isAdmin() || isCFO();
+  const teamId = adminOrCFO ? Number(document.getElementById('newReimbTeam').value) : currentTeamId();
+  const team = state.teams.find(t=>t.id===teamId);
+  state.reimbursements.unshift({ id: state.nextReimbursementId++, teamId, teamName: team.name, employee, desc, amount, status:'Pending', date:'Today', dateISO: TODAY.toISOString().slice(0,10) });
+  closeModal('overlayNewReimbursement');
+  renderAll();
 }
 
 function decideApproval(id, approve, reason){
@@ -2061,6 +2237,7 @@ function startEmptyState(){
   state.bills = [];
   state.vendors = [];
   state.cards = [];
+  state.reimbursements = [];
   state.totalBalance = 0;
   state.currentView = 'admin';
   state.ledgerFilter = 'all';
@@ -2069,6 +2246,7 @@ function startEmptyState(){
   state.emptyMode = true;
   state.teamsExpanded = new Set();
   state.teamsDetailId = null;
+  state.taskSectionsExpanded = new Set();
   renderAll();
 }
 
@@ -2089,7 +2267,7 @@ function renderAll(){
   updateEmptyModeLinks();
   renderDashboard();
   renderTeams();
-  renderApprovals();
+  renderTasks();
   renderLedger();
   renderExpenses();
   renderBills();
