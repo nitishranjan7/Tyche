@@ -563,28 +563,36 @@
         <polygon points="42,70 78,70 67,94 53,94" fill="url(#tycheGrad)"/>
       </svg><span>Tyche</span>
     </div>
-    <div class="rail-group-label">Overview</div>
     <div class="tab active" data-tab="dashboard">Dashboard</div>
     <div class="tab" data-tab="approvals">Tasks <span class="badge" id="approvalBadge"></span></div>
 
+    <div class="rail-group-label">Teams & Approvals</div>
+    <div class="tab" data-tab="teams">Teams</div>
+    <div class="tab" data-tab="approval-rights">Approval Rights</div>
+
+    <div class="rail-group-label">Connections</div>
+    <div class="tab" data-tab="connections">Connections</div>
+
+    <div class="rail-group-label">User Management</div>
+    <div class="tab" data-tab="user-management">User Management</div>
+
+    <div class="rail-group-label">Plan & Billing</div>
+    <div class="tab" data-tab="plan-billing">Plan & Billing</div>
+
     <div class="rail-group-label">Payments</div>
     <div class="tab" data-tab="card-payments">Card Payments</div>
-    <div class="tab" data-tab="bank-transfers">Bank Transfers</div>
+    <div class="tab" data-tab="bank-transfers">Transfers</div>
     <div class="tab" data-tab="bills">Bills</div>
     <div class="tab" data-tab="vendors">Vendors</div>
-
-    <div class="rail-group-label">Budgets</div>
-    <div class="tab" data-tab="teams">Teams & Budgets</div>
 
     <div class="rail-group-label">Spend</div>
     <div class="tab" data-tab="expenses">Expenses</div>
     <div class="tab" data-tab="reimbursements">Reimbursements</div>
     <div class="tab" data-tab="cards">Cards</div>
 
-    <div class="rail-group-label">Insights</div>
+    <div class="rail-group-label">Analytics & Insights</div>
     <div class="tab" data-tab="analytics">Analytics</div>
-    <div class="tab" data-tab="ledger">Ledger</div>
-    <div class="tab" data-tab="approval-rights">Approval Rights</div>
+    <div class="tab" data-tab="cash-flow">Cash Flow</div>
     <div class="rail-footer">
       <span id="companyName">Tyche</span><br>Demo workspace · mock data
       <div style="margin-top:10px;">
@@ -609,6 +617,19 @@
       <div id="dashboardTopCard"></div>
 
       <div class="grid-3" id="dashboardStats"></div>
+
+      <div class="view-header-row" style="margin-top:32px;">
+        <div>
+          <h1>Ledger</h1>
+          <p class="subhead">Every transfer, filterable by team.</p>
+        </div>
+        <button class="btn small" id="ledgerExportBtn" onclick="exportLedgerCSV()">Export CSV</button>
+      </div>
+      <div class="list-toolbar">
+        <div class="ledger-filters" id="ledgerFilters"></div>
+        <input class="search-input" id="ledgerSearch" placeholder="Search recipient or description…" oninput="setSearch('ledger', this.value)">
+      </div>
+      <div class="row-list" id="ledgerList"></div>
     </div>
 
     <!-- TEAMS & BUDGETS -->
@@ -633,27 +654,32 @@
       <div id="tasksContainer"></div>
     </div>
 
-    <!-- LEDGER -->
-    <div class="view" id="view-ledger">
-      <div class="view-header-row">
-        <div>
-          <h1>Ledger</h1>
-          <p class="subhead">Every transfer, filterable by team.</p>
-        </div>
-        <button class="btn small" id="ledgerExportBtn" onclick="exportLedgerCSV()">Export CSV</button>
-      </div>
-      <div class="list-toolbar">
-        <div class="ledger-filters" id="ledgerFilters"></div>
-        <input class="search-input" id="ledgerSearch" placeholder="Search recipient or description…" oninput="setSearch('ledger', this.value)">
-      </div>
-      <div class="row-list" id="ledgerList"></div>
-    </div>
-
     <!-- APPROVAL RIGHTS -->
     <div class="view" id="view-approval-rights">
       <h1>Approval Rights</h1>
       <p class="subhead">Who approves each team's transfers above their threshold, and what that threshold is. Read-only — edit from a team's card in Teams &amp; Budgets.</p>
       <div class="row-list" id="approvalRightsList"></div>
+    </div>
+
+    <!-- CONNECTIONS -->
+    <div class="view" id="view-connections">
+      <h1>Connections</h1>
+      <p class="subhead">Third-party connections land in a future phase.</p>
+      <div class="row-list"><div class="empty-state">Third-party connections land in a future phase.</div></div>
+    </div>
+
+    <!-- USER MANAGEMENT -->
+    <div class="view" id="view-user-management">
+      <h1>User Management</h1>
+      <p class="subhead">User management lands in a future phase.</p>
+      <div class="row-list"><div class="empty-state">User management lands in a future phase.</div></div>
+    </div>
+
+    <!-- PLAN & BILLING -->
+    <div class="view" id="view-plan-billing">
+      <h1>Plan & Billing</h1>
+      <p class="subhead">Plan & billing lands in a future phase.</p>
+      <div class="row-list"><div class="empty-state">Plan & billing lands in a future phase.</div></div>
     </div>
 
     <!-- EXPENSES -->
@@ -772,6 +798,13 @@
       <div class="chart-card">
         <div class="chart-wrap" id="analyticsChart"></div>
       </div>
+    </div>
+
+    <!-- CASH FLOW -->
+    <div class="view" id="view-cash-flow">
+      <h1>Cash Flow</h1>
+      <p class="subhead">Cash flow reporting lands in a future phase.</p>
+      <div class="row-list"><div class="empty-state">Cash flow reporting lands in a future phase.</div></div>
     </div>
 
   </div>
